@@ -15,6 +15,13 @@ const PULL_OFFSET_X = cartHalfWidth + characterHalfWidth + 8;
 const WALK_OFFSET_X = cartHalfWidth + characterHalfWidth + 30;
 const SLOT_SPACING = 46 * CHARACTER_SCALE;
 
+// Resting characters fan out on top of the cart, each one drawn over the previous (see the
+// slotIndex-based depth below) — spacing must be a sizeable fraction of the character's own
+// width or a stacked-up character becomes fully hidden behind the next one. Half-width keeps
+// every character at least half-visible regardless of how many are resting at once.
+const RESTING_SLOT_SPACING = characterHalfWidth;
+const RESTING_BASE_OFFSET_X = -2 * RESTING_SLOT_SPACING;
+
 export class CharacterSprite {
   readonly character: Character;
   readonly sprite: Phaser.GameObjects.Sprite;
@@ -73,8 +80,13 @@ export class CharacterSprite {
         this.sprite.setPosition(cartScreenX + PULL_OFFSET_X + slotIndex * SLOT_SPACING, groundY);
         break;
       case 'resting':
-        this.sprite.setDepth(6);
-        this.sprite.setPosition(cartScreenX - 6 * CHARACTER_SCALE + slotIndex * 12 * CHARACTER_SCALE, groundY - 44 * CHARACTER_SCALE);
+        // Depth grows with slotIndex so the fan-out order is deterministic (each character
+        // renders above the one before it) instead of depending on incidental creation order.
+        this.sprite.setDepth(6 + slotIndex);
+        this.sprite.setPosition(
+          cartScreenX + RESTING_BASE_OFFSET_X + slotIndex * RESTING_SLOT_SPACING,
+          groundY - 44 * CHARACTER_SCALE,
+        );
         break;
       case 'walking':
         this.sprite.setDepth(4);

@@ -63,8 +63,8 @@ export const TEXTURE_KEYS = {
   CART: 'tex-cart',
 } as const;
 
-export const CHARACTER_SCALE = 2 / 1.5;
-export const CART_SCALE = 2 / 1.2;
+export const CHARACTER_SCALE = 2.5;
+export const CART_SCALE = 3;
 
 // Base (unscaled) placeholder texture sizes, generated in BootScene — shared here so sprite
 // alignment math (CharacterSprite) can stay in sync with what BootScene actually draws.
