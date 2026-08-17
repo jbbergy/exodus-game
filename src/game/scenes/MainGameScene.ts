@@ -42,12 +42,14 @@ export class MainGameScene extends Phaser.Scene {
     eventBus.on('resultAcknowledged', this.handleResultAcknowledged);
     eventBus.on('tributeAcknowledged', this.handleTributeAcknowledged);
     eventBus.on('characterHoverChanged', this.handleCharacterHoverChanged);
+    eventBus.on('characterClicked', this.handleCharacterClicked);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       eventBus.off('sendCharacterForResource', this.handleSendCharacter);
       eventBus.off('resultAcknowledged', this.handleResultAcknowledged);
       eventBus.off('tributeAcknowledged', this.handleTributeAcknowledged);
       eventBus.off('characterHoverChanged', this.handleCharacterHoverChanged);
+      eventBus.off('characterClicked', this.handleCharacterClicked);
     });
   }
 
@@ -109,6 +111,10 @@ export class MainGameScene extends Phaser.Scene {
     } else {
       this.uiStore.scheduleHoverClear();
     }
+  };
+
+  private handleCharacterClicked = (payload: { characterId: string; x: number; y: number }): void => {
+    this.uiStore.openRadialMenu(payload.characterId, { x: payload.x, y: payload.y });
   };
 
   private handleDeath(characterId: string): void {

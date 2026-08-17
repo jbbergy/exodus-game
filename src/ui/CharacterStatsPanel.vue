@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { CharacterState, ResourceType } from '@/domain/types';
 import { useConvoyStore } from '@/state/stores/convoyStore';
 import { useUiStore } from '@/state/stores/uiStore';
 
@@ -29,24 +28,6 @@ const energyRateClass = computed(() => {
   return 'steady';
 });
 
-const stateLabels: Record<CharacterState, string> = {
-  pulling: 'Tirer',
-  resting: 'Reposer',
-  walking: 'Marcher',
-};
-
-function setState(state: CharacterState): void {
-  if (!character.value) return;
-  convoyStore.setCharacterState(character.value.id, state);
-}
-
-const waterUsable = computed(() => convoyStore.currentBiome.waterUsable);
-
-function consume(type: ResourceType): void {
-  if (!character.value) return;
-  convoyStore.consumeResourceFor(character.value.id, type);
-}
-
 const panelStyle = computed(() => {
   const position = uiStore.hoverPosition;
   if (!position) return { display: 'none' };
@@ -56,13 +37,7 @@ const panelStyle = computed(() => {
 
 <template>
   <Teleport to="body">
-    <div
-      v-if="character"
-      class="panel"
-      :style="panelStyle"
-      @mouseenter="uiStore.cancelHoverClear"
-      @mouseleave="uiStore.scheduleHoverClear"
-    >
+    <div v-if="character" class="panel" :style="panelStyle">
       <div class="header">
         <span class="swatch" :style="{ backgroundColor: colorHex }"></span>
         <span class="name">{{ character.name }}</span>
@@ -74,25 +49,8 @@ const panelStyle = computed(() => {
       <div class="energy-row">
         <span class="energy-value">{{ Math.round(character.energy) }} / {{ character.maxEnergy }}</span>
         <span v-if="character.alive" class="energy-rate" :class="energyRateClass">{{ energyRateLabel }}</span>
+        <span v-else class="deceased-label">décédé(e)</span>
       </div>
-
-      <template v-if="character.alive">
-        <div class="button-row">
-          <button
-            v-for="(label, state) in stateLabels"
-            :key="state"
-            :class="{ active: character.state === state }"
-            @click="setState(state as CharacterState)"
-          >
-            {{ label }}
-          </button>
-        </div>
-        <div class="button-row">
-          <button :disabled="convoyStore.inventory.water <= 0 || !waterUsable" @click="consume('water')">+💧</button>
-          <button :disabled="convoyStore.inventory.food <= 0" @click="consume('food')">+🍞</button>
-        </div>
-      </template>
-      <div v-else class="deceased-label">décédé(e)</div>
     </div>
   </Teleport>
 </template>
@@ -100,7 +58,7 @@ const panelStyle = computed(() => {
 <style scoped>
 .panel {
   position: fixed;
-  width: 160px;
+  width: 150px;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -110,7 +68,7 @@ const panelStyle = computed(() => {
   border-radius: 10px;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
   font-size: 12px;
-  pointer-events: auto;
+  pointer-events: none;
   z-index: 50;
 }
 
@@ -181,34 +139,8 @@ const panelStyle = computed(() => {
   color: rgba(255, 255, 255, 0.55);
 }
 
-.button-row {
-  display: flex;
-  gap: 4px;
-}
-
-.button-row button {
-  flex: 1;
-  border: none;
-  border-radius: 5px;
-  padding: 3px 4px;
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
-  font-size: 11px;
-}
-
-.button-row button.active {
-  background: #d88a3f;
-  font-weight: 600;
-}
-
-.button-row button:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
-
 .deceased-label {
   font-style: italic;
-  font-size: 11px;
   opacity: 0.8;
 }
 </style>

@@ -8,6 +8,7 @@ export type AppEvents = {
   resourceResolved: { outcome: CollectionOutcome };
   characterDied: { characterId: string };
   characterHoverChanged: { characterId: string; x: number; y: number } | { characterId: null };
+  characterClicked: { characterId: string; x: number; y: number };
   resultAcknowledged: undefined;
   tributeAcknowledged: undefined;
 };

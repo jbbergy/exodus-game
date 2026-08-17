@@ -22,14 +22,24 @@ export class CharacterSprite {
     this.sprite.on('pointerout', () => {
       eventBus.emit('characterHoverChanged', { characterId: null });
     });
+    this.sprite.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      const { x, y } = this.toClientPosition(pointer);
+      eventBus.emit('characterClicked', { characterId: this.character.id, x, y });
+    });
   }
 
   /** Converts the Phaser pointer's canvas-local position into viewport (clientX/clientY) coordinates. */
-  private emitHover(pointer: Phaser.Input.Pointer): void {
+  private toClientPosition(pointer: Phaser.Input.Pointer): { x: number; y: number } {
     const game = this.sprite.scene.sys.game;
     const rect = game.canvas.getBoundingClientRect();
-    const x = rect.left + pointer.x * (rect.width / game.scale.gameSize.width);
-    const y = rect.top + pointer.y * (rect.height / game.scale.gameSize.height);
+    return {
+      x: rect.left + pointer.x * (rect.width / game.scale.gameSize.width),
+      y: rect.top + pointer.y * (rect.height / game.scale.gameSize.height),
+    };
+  }
+
+  private emitHover(pointer: Phaser.Input.Pointer): void {
+    const { x, y } = this.toClientPosition(pointer);
     eventBus.emit('characterHoverChanged', { characterId: this.character.id, x, y });
   }
 

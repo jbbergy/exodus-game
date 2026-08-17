@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import CharacterEnergyBar from '@/ui/CharacterEnergyBar.vue';
 import { useConvoyStore } from '@/state/stores/convoyStore';
 
 const convoyStore = useConvoyStore();
@@ -7,9 +6,6 @@ const convoyStore = useConvoyStore();
 
 <template>
   <div class="hud">
-    <div class="characters">
-      <CharacterEnergyBar v-for="character in convoyStore.characters" :key="character.id" :character="character" />
-    </div>
     <div class="convoy-status">
       <span class="biome-name">📍 {{ convoyStore.currentBiome.name }}</span>
       <span>💧 {{ convoyStore.inventory.water }}</span>
@@ -29,18 +25,6 @@ const convoyStore = useConvoyStore();
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-
-.characters {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  align-items: center;
-  background: rgba(0, 0, 0, 0.5);
-  padding: 6px 10px;
-  border-radius: 20px;
-  width: fit-content;
-  pointer-events: auto;
 }
 
 .convoy-status {

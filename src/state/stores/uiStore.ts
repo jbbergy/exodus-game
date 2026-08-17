@@ -18,10 +18,13 @@ export const useUiStore = defineStore('ui', () => {
   const deceasedCharacterId = ref<string | null>(null);
   // Non-blocking: shown alongside whatever activeModal is, never pauses the game.
   const biomeBannerText = ref<string | null>(null);
-  // Set from hovering the character's sprite (game world) or swatch (HUD).
+  // Set from hovering the character's sprite in the game world.
   const hoveredCharacterId = ref<string | null>(null);
   const hoverPosition = ref<HoverPosition | null>(null);
   let hoverClearTimer: ReturnType<typeof setTimeout> | undefined;
+  // Opened by clicking a character's sprite; suppresses the hover panel while active.
+  const radialMenuCharacterId = ref<string | null>(null);
+  const radialMenuPosition = ref<HoverPosition | null>(null);
 
   function raiseSignal(signal: ResourceSignal): void {
     pendingSignal.value = signal;
@@ -65,17 +68,15 @@ export const useUiStore = defineStore('ui', () => {
     biomeBannerText.value = null;
   }
 
-  /** Trigger (chip or in-world sprite) is hovered: show the panel right away, cancelling any pending close. */
+  /** In-world sprite is hovered: show the panel right away, cancelling any pending close. */
   function setHoveredCharacter(characterId: string, position: HoverPosition): void {
+    if (radialMenuCharacterId.value) return;
     clearTimeout(hoverClearTimer);
     hoveredCharacterId.value = characterId;
     hoverPosition.value = position;
   }
 
-  /**
-   * Trigger or panel is no longer hovered: close after a short grace period, so moving the
-   * cursor from the trigger onto the panel itself (to click a button) doesn't close it.
-   */
+  /** Sprite is no longer hovered: close after a short grace period to avoid flicker. */
   function scheduleHoverClear(): void {
     clearTimeout(hoverClearTimer);
     hoverClearTimer = setTimeout(() => {
@@ -83,9 +84,21 @@ export const useUiStore = defineStore('ui', () => {
     }, HOVER_CLEAR_DELAY_MS);
   }
 
-  /** Panel (or trigger) re-entered before the grace period elapsed: keep it open. */
+  /** Re-hovered before the grace period elapsed: keep it open. */
   function cancelHoverClear(): void {
     clearTimeout(hoverClearTimer);
+  }
+
+  function openRadialMenu(characterId: string, position: HoverPosition): void {
+    radialMenuCharacterId.value = characterId;
+    radialMenuPosition.value = position;
+    clearTimeout(hoverClearTimer);
+    hoveredCharacterId.value = null;
+  }
+
+  function closeRadialMenu(): void {
+    radialMenuCharacterId.value = null;
+    radialMenuPosition.value = null;
   }
 
   return {
@@ -96,6 +109,8 @@ export const useUiStore = defineStore('ui', () => {
     biomeBannerText,
     hoveredCharacterId,
     hoverPosition,
+    radialMenuCharacterId,
+    radialMenuPosition,
     raiseSignal,
     clearSignal,
     showResult,
@@ -108,5 +123,7 @@ export const useUiStore = defineStore('ui', () => {
     setHoveredCharacter,
     scheduleHoverClear,
     cancelHoverClear,
+    openRadialMenu,
+    closeRadialMenu,
   };
 });
