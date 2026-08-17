@@ -88,10 +88,14 @@ export const BIOME_BANNER_DURATION_MS = 4000;
 
 export const HOVER_CLEAR_DELAY_MS = 150;
 
-export const SCREEN_WIDTH = 960;
-export const SCREEN_HEIGHT = 540;
+// With Scale.RESIZE the game's logical width/height track the viewport, so layout is expressed
+// as fractions of the current scene size rather than fixed pixel constants (see game/utils/layout.ts).
+export const CART_X_FRACTION = 0.45;
+export const GROUND_Y_FRACTION = 420 / 540;
 
-export const GROUND_Y = 420;
+// Horizontal tiling unit for the procedurally generated parallax backgrounds — independent of
+// viewport size, since TileSprite repeats it seamlessly along X regardless of display width.
+export const BG_TILE_WIDTH = 400;
 
 export const RESOURCE_SIGNAL_MIN_INTERVAL_MS = 45000;
 export const RESOURCE_SIGNAL_MAX_INTERVAL_MS = 90000;

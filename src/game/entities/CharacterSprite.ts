@@ -1,13 +1,6 @@
 import Phaser from 'phaser';
 import type { Character } from '@/domain/Character';
-import {
-  CART_SCALE,
-  CART_TEXTURE_WIDTH,
-  CHARACTER_SCALE,
-  CHARACTER_TEXTURE_WIDTH,
-  GROUND_Y,
-  TEXTURE_KEYS,
-} from '@/game/constants';
+import { CART_SCALE, CART_TEXTURE_WIDTH, CHARACTER_SCALE, CHARACTER_TEXTURE_WIDTH, TEXTURE_KEYS } from '@/game/constants';
 import { eventBus } from '@/state/eventBus';
 import { pointerToClientPosition } from '@/game/utils/screenCoordinates';
 
@@ -15,9 +8,9 @@ const cartHalfWidth = (CART_TEXTURE_WIDTH / 2) * CART_SCALE;
 const characterHalfWidth = (CHARACTER_TEXTURE_WIDTH / 2) * CHARACTER_SCALE;
 
 // Derived from both scales (not just CHARACTER_SCALE) so the first pulling/walking character
-// never overlaps the cart even if CART_SCALE and CHARACTER_SCALE change independently —
-// verified that up to 5 pulling/walking characters stay within SCREEN_WIDTH (960) at the
-// current scales. Re-check the 5th slot doesn't run off either screen edge if either grows a lot.
+// never overlaps the cart even if CART_SCALE and CHARACTER_SCALE change independently. This is
+// a fixed pixel budget on either side of the cart, so it's only safe up to 5 characters at
+// screen widths in the realistic desktop/tablet range — re-check on a much smaller viewport.
 const PULL_OFFSET_X = cartHalfWidth + characterHalfWidth + 8;
 const WALK_OFFSET_X = cartHalfWidth + characterHalfWidth + 30;
 const SLOT_SPACING = 46 * CHARACTER_SCALE;
@@ -26,10 +19,10 @@ export class CharacterSprite {
   readonly character: Character;
   readonly sprite: Phaser.GameObjects.Sprite;
 
-  constructor(scene: Phaser.Scene, character: Character) {
+  constructor(scene: Phaser.Scene, character: Character, groundY: number) {
     this.character = character;
     const key = TEXTURE_KEYS.CHARACTER_PREFIX + character.id;
-    this.sprite = scene.add.sprite(0, GROUND_Y, key);
+    this.sprite = scene.add.sprite(0, groundY, key);
     this.sprite.setOrigin(0.5, 1);
     this.sprite.setScale(CHARACTER_SCALE);
     this.sprite.setDepth(4);
@@ -67,7 +60,7 @@ export class CharacterSprite {
     }
   }
 
-  updatePosition(cartScreenX: number, slotIndex: number): void {
+  updatePosition(cartScreenX: number, slotIndex: number, groundY: number): void {
     if (!this.character.alive) {
       this.sprite.setAlpha(0.25);
       return;
@@ -77,15 +70,15 @@ export class CharacterSprite {
     switch (this.character.state) {
       case 'pulling':
         this.sprite.setDepth(4);
-        this.sprite.setPosition(cartScreenX + PULL_OFFSET_X + slotIndex * SLOT_SPACING, GROUND_Y);
+        this.sprite.setPosition(cartScreenX + PULL_OFFSET_X + slotIndex * SLOT_SPACING, groundY);
         break;
       case 'resting':
         this.sprite.setDepth(6);
-        this.sprite.setPosition(cartScreenX - 6 * CHARACTER_SCALE + slotIndex * 12 * CHARACTER_SCALE, GROUND_Y - 44 * CHARACTER_SCALE);
+        this.sprite.setPosition(cartScreenX - 6 * CHARACTER_SCALE + slotIndex * 12 * CHARACTER_SCALE, groundY - 44 * CHARACTER_SCALE);
         break;
       case 'walking':
         this.sprite.setDepth(4);
-        this.sprite.setPosition(cartScreenX - WALK_OFFSET_X - slotIndex * SLOT_SPACING, GROUND_Y);
+        this.sprite.setPosition(cartScreenX - WALK_OFFSET_X - slotIndex * SLOT_SPACING, groundY);
         break;
     }
   }

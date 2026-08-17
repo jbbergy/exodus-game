@@ -1,27 +1,37 @@
 import Phaser from 'phaser';
 import type { BiomeId, CharacterState } from '@/domain/types';
-import { Cart, CART_SCREEN_X } from '@/game/entities/Cart';
+import { Cart } from '@/game/entities/Cart';
 import { CharacterSprite } from '@/game/entities/CharacterSprite';
 import { ParallaxBackground } from '@/game/entities/ParallaxBackground';
 import { AudioManager } from '@/game/systems/AudioManager';
+import { generateBiomeBackgrounds } from '@/game/systems/BackgroundTextures';
 import { ConvoySystem } from '@/game/systems/ConvoySystem';
 import { ResourceEventSystem } from '@/game/systems/ResourceEventSystem';
+import { computeCartScreenX, computeGroundY } from '@/game/utils/layout';
 import { eventBus } from '@/state/eventBus';
 import { pinia } from '@/state/pinia';
 import { useConvoyStore } from '@/state/stores/convoyStore';
 import { useUiStore } from '@/state/stores/uiStore';
+
+// Debounced so a window drag-resize (which can fire many 'resize' events per second) doesn't
+// regenerate all 15 background textures on every intermediate frame.
+const RESIZE_DEBOUNCE_MS = 150;
 
 export class MainGameScene extends Phaser.Scene {
   private readonly convoyStore = useConvoyStore(pinia);
   private readonly uiStore = useUiStore(pinia);
 
   private background!: ParallaxBackground;
+  private cart!: Cart;
   private characterSprites: CharacterSprite[] = [];
   private convoySystem!: ConvoySystem;
   private resourceEventSystem!: ResourceEventSystem;
   private audio!: AudioManager;
   private currentBiomeId!: BiomeId;
   private radialMenuWasOpen = false;
+  private groundY = 0;
+  private cartScreenX = 0;
+  private resizeDebounceTimer?: ReturnType<typeof setTimeout>;
 
   constructor() {
     super('MainGameScene');
@@ -29,10 +39,13 @@ export class MainGameScene extends Phaser.Scene {
 
   create(): void {
     this.currentBiomeId = this.convoyStore.convoy.currentBiome().id;
-    this.background = new ParallaxBackground(this, this.currentBiomeId);
-    new Cart(this);
+    this.groundY = computeGroundY(this.scale.height);
+    this.cartScreenX = computeCartScreenX(this.scale.width);
+
+    this.background = new ParallaxBackground(this, this.currentBiomeId, this.scale.width, this.scale.height);
+    this.cart = new Cart(this, this.cartScreenX, this.groundY);
     this.characterSprites = this.convoyStore.convoy.characters.map(
-      (character) => new CharacterSprite(this, character),
+      (character) => new CharacterSprite(this, character, this.groundY),
     );
 
     this.convoySystem = new ConvoySystem(this.convoyStore.convoy);
@@ -45,6 +58,7 @@ export class MainGameScene extends Phaser.Scene {
     eventBus.on('characterHoverChanged', this.handleCharacterHoverChanged);
     eventBus.on('characterClicked', this.handleCharacterClicked);
     eventBus.on('cartHoverChanged', this.handleCartHoverChanged);
+    this.scale.on('resize', this.handleResize);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       eventBus.off('sendCharacterForResource', this.handleSendCharacter);
@@ -53,6 +67,8 @@ export class MainGameScene extends Phaser.Scene {
       eventBus.off('characterHoverChanged', this.handleCharacterHoverChanged);
       eventBus.off('characterClicked', this.handleCharacterClicked);
       eventBus.off('cartHoverChanged', this.handleCartHoverChanged);
+      this.scale.off('resize', this.handleResize);
+      clearTimeout(this.resizeDebounceTimer);
     });
   }
 
@@ -97,9 +113,24 @@ export class MainGameScene extends Phaser.Scene {
     for (const characterSprite of this.characterSprites) {
       const { state, alive } = characterSprite.character;
       const slot = alive ? slots[state]++ : 0;
-      characterSprite.updatePosition(CART_SCREEN_X, slot);
+      characterSprite.updatePosition(this.cartScreenX, slot, this.groundY);
     }
   }
+
+  /** Scale.RESIZE means the logical game size tracks the viewport — reposition the ground-line
+   * layout immediately, but debounce regenerating the (cheap but numerous) background textures. */
+  private handleResize = (gameSize: Phaser.Structs.Size): void => {
+    const { width, height } = gameSize;
+    this.groundY = computeGroundY(height);
+    this.cartScreenX = computeCartScreenX(width);
+    this.cart.reposition(this.cartScreenX, this.groundY);
+
+    clearTimeout(this.resizeDebounceTimer);
+    this.resizeDebounceTimer = setTimeout(() => {
+      generateBiomeBackgrounds(this, height);
+      this.background.resize(width, height, this.currentBiomeId);
+    }, RESIZE_DEBOUNCE_MS);
+  };
 
   private syncRadialMenuInteractivity(): void {
     const isOpen = this.uiStore.radialMenuCharacterId !== null;
