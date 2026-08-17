@@ -89,7 +89,11 @@ export const useUiStore = defineStore('ui', () => {
     clearTimeout(hoverClearTimer);
   }
 
+  /** No-op while a menu is already open: a stray click (e.g. one of the radial buttons
+   * overlapping another character's sprite) must never swap it to a different character —
+   * the player has to explicitly close the current one first. */
   function openRadialMenu(characterId: string, position: HoverPosition): void {
+    if (radialMenuCharacterId.value) return;
     radialMenuCharacterId.value = characterId;
     radialMenuPosition.value = position;
     clearTimeout(hoverClearTimer);

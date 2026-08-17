@@ -43,6 +43,22 @@ export class CharacterSprite {
     eventBus.emit('characterHoverChanged', { characterId: this.character.id, x, y });
   }
 
+  /** Fully stops this sprite from receiving pointer events (used while the radial menu is open,
+   * so a menu button that visually overlaps another character's sprite can't trigger it). */
+  setInputEnabled(enabled: boolean): void {
+    if (enabled) {
+      // `disableInteractive()` keeps `sprite.input` around (just flips `.enabled` off), it
+      // doesn't clear it — so re-enabling must flip that flag back rather than skip re-setup.
+      if (this.sprite.input) {
+        this.sprite.input.enabled = true;
+      } else {
+        this.sprite.setInteractive({ useHandCursor: true });
+      }
+    } else {
+      this.sprite.disableInteractive();
+    }
+  }
+
   updatePosition(cartScreenX: number, slotIndex: number): void {
     if (!this.character.alive) {
       this.sprite.setAlpha(0.25);

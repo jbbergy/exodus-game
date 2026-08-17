@@ -21,6 +21,7 @@ export class MainGameScene extends Phaser.Scene {
   private resourceEventSystem!: ResourceEventSystem;
   private audio!: AudioManager;
   private currentBiomeId!: BiomeId;
+  private radialMenuWasOpen = false;
 
   constructor() {
     super('MainGameScene');
@@ -54,6 +55,8 @@ export class MainGameScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
+    this.syncRadialMenuInteractivity();
+
     if (this.convoySystem.paused) {
       this.syncCharacterSprites();
       return;
@@ -93,6 +96,16 @@ export class MainGameScene extends Phaser.Scene {
       const { state, alive } = characterSprite.character;
       const slot = alive ? slots[state]++ : 0;
       characterSprite.updatePosition(CART_SCREEN_X, slot);
+    }
+  }
+
+  private syncRadialMenuInteractivity(): void {
+    const isOpen = this.uiStore.radialMenuCharacterId !== null;
+    if (isOpen === this.radialMenuWasOpen) return;
+
+    this.radialMenuWasOpen = isOpen;
+    for (const characterSprite of this.characterSprites) {
+      characterSprite.setInputEnabled(!isOpen);
     }
   }
 
