@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
+import { RESOURCE_SIGNAL_RESPONSE_TIMEOUT_MS } from '@/game/constants';
 import { eventBus } from '@/state/eventBus';
 import { useConvoyStore } from '@/state/stores/convoyStore';
 import { useUiStore } from '@/state/stores/uiStore';
@@ -9,6 +10,13 @@ const uiStore = useUiStore();
 
 const signal = computed(() => uiStore.pendingSignal);
 const signalerName = computed(() => convoyStore.findCharacter(signal.value?.characterId ?? '')?.name ?? '???');
+
+const timeUp = ref(false);
+
+onMounted(async () => {
+  await nextTick();
+  timeUp.value = true;
+});
 
 function send(characterId: string | null): void {
   eventBus.emit('sendCharacterForResource', { characterId });
@@ -27,6 +35,13 @@ function send(characterId: string | null): void {
         Envoyer {{ character.name }}
       </button>
       <button class="skip" @click="send(null)">Personne</button>
+    </div>
+    <div class="countdown-track">
+      <div
+        class="countdown-fill"
+        :class="{ shrunk: timeUp }"
+        :style="{ transitionDuration: `${RESOURCE_SIGNAL_RESPONSE_TIMEOUT_MS}ms` }"
+      ></div>
     </div>
   </div>
 </template>
@@ -70,5 +85,25 @@ function send(characterId: string | null): void {
 .choices button.skip {
   background: rgba(255, 255, 255, 0.15);
   font-weight: 400;
+}
+
+.countdown-track {
+  margin-top: 10px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+}
+
+.countdown-fill {
+  height: 100%;
+  width: 100%;
+  background: #d88a3f;
+  transition-property: width;
+  transition-timing-function: linear;
+}
+
+.countdown-fill.shrunk {
+  width: 0%;
 }
 </style>

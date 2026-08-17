@@ -54,8 +54,8 @@ export const STARTING_CHARACTERS: CharacterConfig[] = [
 ];
 
 export const STARTING_INVENTORY: InventoryState = {
-  water: 10,
-  food: 10,
+  water: 5,
+  food: 5,
 };
 
 export const TEXTURE_KEYS = {
@@ -83,14 +83,15 @@ export const SCREEN_HEIGHT = 540;
 
 export const GROUND_Y = 420;
 
-export const RESOURCE_SIGNAL_MIN_INTERVAL_MS = 15000;
-export const RESOURCE_SIGNAL_MAX_INTERVAL_MS = 30000;
+export const RESOURCE_SIGNAL_MIN_INTERVAL_MS = 45000;
+export const RESOURCE_SIGNAL_MAX_INTERVAL_MS = 90000;
+export const RESOURCE_SIGNAL_RESPONSE_TIMEOUT_MS = 5000;
 
 export const HIDDEN_COST_MAX = 50;
 export const HIDDEN_COST_SKEW = 2.2;
 
 export const RESOURCE_QUANTITY_MIN = 1;
-export const RESOURCE_QUANTITY_MAX = 5;
+export const RESOURCE_QUANTITY_MAX = 3;
 
 export const WATER_RESTORE_AMOUNT = 15;
 export const FOOD_RESTORE_AMOUNT = 25;

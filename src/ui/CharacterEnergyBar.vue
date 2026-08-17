@@ -51,45 +51,44 @@ function consume(type: ResourceType): void {
       <span class="name">{{ character.name }}</span>
     </div>
 
-    <div class="bar-track">
-      <div class="bar-fill" :class="energyClass" :style="{ width: energyPercent + '%' }"></div>
-    </div>
-    <div class="energy-row">
-      <span class="energy-value">{{ Math.round(character.energy) }} / {{ character.maxEnergy }}</span>
-      <span v-if="character.alive" class="energy-rate" :class="energyRateClass">{{ energyRateLabel }}</span>
-    </div>
+    <div class="details">
+      <div class="bar-track">
+        <div class="bar-fill" :class="energyClass" :style="{ width: energyPercent + '%' }"></div>
+      </div>
+      <div class="energy-row">
+        <span class="energy-value">{{ Math.round(character.energy) }} / {{ character.maxEnergy }}</span>
+        <span v-if="character.alive" class="energy-rate" :class="energyRateClass">{{ energyRateLabel }}</span>
+      </div>
 
-    <template v-if="character.alive">
-      <div class="button-row">
-        <button
-          v-for="(label, state) in stateLabels"
-          :key="state"
-          :class="{ active: character.state === state }"
-          @click="setState(state as CharacterState)"
-        >
-          {{ label }}
-        </button>
-      </div>
-      <div class="button-row">
-        <button :disabled="convoyStore.inventory.water <= 0 || !waterUsable" @click="consume('water')">+💧</button>
-        <button :disabled="convoyStore.inventory.food <= 0" @click="consume('food')">+🍞</button>
-      </div>
-    </template>
-    <div v-else class="deceased-label">décédé(e)</div>
+      <template v-if="character.alive">
+        <div class="button-row">
+          <button
+            v-for="(label, state) in stateLabels"
+            :key="state"
+            :class="{ active: character.state === state }"
+            @click="setState(state as CharacterState)"
+          >
+            {{ label }}
+          </button>
+        </div>
+        <div class="button-row">
+          <button :disabled="convoyStore.inventory.water <= 0 || !waterUsable" @click="consume('water')">+💧</button>
+          <button :disabled="convoyStore.inventory.food <= 0" @click="consume('food')">+🍞</button>
+        </div>
+      </template>
+      <div v-else class="deceased-label">décédé(e)</div>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .card {
+  position: relative;
   background: rgba(0, 0, 0, 0.55);
   color: #fff;
-  padding: 8px 10px;
+  padding: 6px 10px;
   border-radius: 10px;
-  min-width: 140px;
   font-size: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
 }
 
 .card.dead {
@@ -102,6 +101,7 @@ function consume(type: ResourceType): void {
   gap: 6px;
   font-weight: 600;
   font-size: 13px;
+  cursor: default;
 }
 
 .swatch {
@@ -109,6 +109,35 @@ function consume(type: ResourceType): void {
   height: 10px;
   border-radius: 50%;
   display: inline-block;
+}
+
+.details {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 6px;
+  width: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.85);
+  padding: 8px 10px;
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  transform: translateY(-4px);
+  pointer-events: none;
+  transition:
+    opacity 0.12s ease,
+    transform 0.12s ease;
+  z-index: 30;
+}
+
+.card:hover .details,
+.card:focus-within .details {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
 }
 
 .bar-track {

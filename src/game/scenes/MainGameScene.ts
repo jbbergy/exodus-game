@@ -50,7 +50,7 @@ export class MainGameScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
-    if (this.uiStore.activeModal !== 'none') {
+    if (this.convoySystem.paused) {
       this.syncCharacterSprites();
       return;
     }
@@ -67,9 +67,17 @@ export class MainGameScene extends Phaser.Scene {
       return;
     }
 
+    if (this.uiStore.activeModal === 'signal') {
+      // The convoy keeps moving while the player decides; running out of time
+      // resolves exactly like clicking "Personne".
+      if (this.resourceEventSystem.isSignalExpired(this.time.now)) {
+        this.handleSendCharacter({ characterId: null });
+      }
+      return;
+    }
+
     const signal = this.resourceEventSystem.maybeRaiseSignal(this.time.now);
     if (signal) {
-      this.convoySystem.paused = true;
       this.uiStore.raiseSignal(signal);
       eventBus.emit('signalRaised', { signal });
     }

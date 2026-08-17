@@ -1,7 +1,7 @@
 import type { Convoy } from '@/domain/Convoy';
 import type { CollectionOutcome } from '@/domain/Resource';
 import type { ResourceSignal, ResourceType } from '@/domain/types';
-import { RESOURCE_SIGNAL_MAX_INTERVAL_MS, RESOURCE_SIGNAL_MIN_INTERVAL_MS } from '@/game/constants';
+import { RESOURCE_SIGNAL_MAX_INTERVAL_MS, RESOURCE_SIGNAL_MIN_INTERVAL_MS, RESOURCE_SIGNAL_RESPONSE_TIMEOUT_MS } from '@/game/constants';
 import { rollHiddenEnergyCost, rollResourceQuantity } from '@/game/systems/EnergyRng';
 
 let signalCounter = 0;
@@ -10,6 +10,7 @@ export class ResourceEventSystem {
   private readonly convoy: Convoy;
   private nextSignalAt: number;
   private pending = false;
+  private pendingDeadlineMs = 0;
 
   constructor(convoy: Convoy, nowMs: number) {
     this.convoy = convoy;
@@ -32,8 +33,14 @@ export class ResourceEventSystem {
     const character = living[Math.floor(Math.random() * living.length)];
 
     this.pending = true;
+    this.pendingDeadlineMs = nowMs + RESOURCE_SIGNAL_RESPONSE_TIMEOUT_MS;
     signalCounter += 1;
     return { id: `signal-${signalCounter}`, characterId: character.id, resourceType: this.pickResourceType() };
+  }
+
+  /** The player didn't answer in time — treated the same as choosing "send nobody". */
+  isSignalExpired(nowMs: number): boolean {
+    return this.pending && nowMs >= this.pendingDeadlineMs;
   }
 
   private pickResourceType(): ResourceType {
