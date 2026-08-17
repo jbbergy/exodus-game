@@ -1,0 +1,61 @@
+import { defineStore } from 'pinia';
+import { ref } from 'vue';
+import type { CollectionOutcome } from '@/domain/Resource';
+import type { ResourceSignal } from '@/domain/types';
+
+export type ActiveModal = 'none' | 'signal' | 'result' | 'tribute' | 'gameover';
+
+export const useUiStore = defineStore('ui', () => {
+  const activeModal = ref<ActiveModal>('none');
+  const pendingSignal = ref<ResourceSignal | null>(null);
+  const lastOutcome = ref<CollectionOutcome | null>(null);
+  const deceasedCharacterId = ref<string | null>(null);
+
+  function raiseSignal(signal: ResourceSignal): void {
+    pendingSignal.value = signal;
+    activeModal.value = 'signal';
+  }
+
+  function clearSignal(): void {
+    pendingSignal.value = null;
+    activeModal.value = 'none';
+  }
+
+  function showResult(outcome: CollectionOutcome): void {
+    lastOutcome.value = outcome;
+    pendingSignal.value = null;
+    activeModal.value = 'result';
+  }
+
+  function dismissResult(): void {
+    activeModal.value = 'none';
+  }
+
+  function showTribute(characterId: string): void {
+    deceasedCharacterId.value = characterId;
+    activeModal.value = 'tribute';
+  }
+
+  function dismissTribute(): void {
+    activeModal.value = 'none';
+    deceasedCharacterId.value = null;
+  }
+
+  function showGameOver(): void {
+    activeModal.value = 'gameover';
+  }
+
+  return {
+    activeModal,
+    pendingSignal,
+    lastOutcome,
+    deceasedCharacterId,
+    raiseSignal,
+    clearSignal,
+    showResult,
+    dismissResult,
+    showTribute,
+    dismissTribute,
+    showGameOver,
+  };
+});
