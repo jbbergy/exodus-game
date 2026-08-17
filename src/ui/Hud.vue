@@ -8,8 +8,6 @@ const convoyStore = useConvoyStore();
   <div class="hud">
     <div class="convoy-status">
       <span class="biome-name">📍 {{ convoyStore.currentBiome.name }}</span>
-      <span v-if="convoyStore.speed === 0" class="stalled">Convoi à l'arrêt !</span>
-      <span v-else>Vitesse : {{ convoyStore.speed.toFixed(0) }}</span>
     </div>
   </div>
 </template>
@@ -34,11 +32,6 @@ const convoyStore = useConvoyStore();
   border-radius: 8px;
   width: fit-content;
   font-size: 13px;
-}
-
-.stalled {
-  color: #ff8f7a;
-  font-weight: 600;
 }
 
 .biome-name {

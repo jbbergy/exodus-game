@@ -25,6 +25,11 @@ const panelStyle = computed(() => {
         <span>🍞 Nourriture</span>
         <span>{{ convoyStore.inventory.food }}</span>
       </div>
+      <div class="resource-row">
+        <span>Vitesse</span>
+        <span v-if="convoyStore.speed === 0" class="stalled">À l'arrêt !</span>
+        <span v-else>{{ convoyStore.speed.toFixed(0) }}</span>
+      </div>
     </div>
   </Teleport>
 </template>
@@ -56,5 +61,11 @@ const panelStyle = computed(() => {
   justify-content: space-between;
   font-size: 12px;
   opacity: 0.9;
+}
+
+.stalled {
+  color: #ff8f7a;
+  font-weight: 600;
+  opacity: 1;
 }
 </style>
