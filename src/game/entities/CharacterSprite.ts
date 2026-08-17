@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import type { Character } from '@/domain/Character';
 import { GROUND_Y, TEXTURE_KEYS } from '@/game/constants';
+import { eventBus } from '@/state/eventBus';
 
 const SLOT_SPACING = 46;
 
@@ -14,6 +15,14 @@ export class CharacterSprite {
     this.sprite = scene.add.sprite(0, GROUND_Y, key);
     this.sprite.setOrigin(0.5, 1);
     this.sprite.setDepth(4);
+
+    this.sprite.setInteractive({ useHandCursor: true });
+    this.sprite.on('pointerover', () => {
+      eventBus.emit('characterHoverChanged', { characterId: this.character.id });
+    });
+    this.sprite.on('pointerout', () => {
+      eventBus.emit('characterHoverChanged', { characterId: null });
+    });
   }
 
   updatePosition(cartScreenX: number, slotIndex: number): void {

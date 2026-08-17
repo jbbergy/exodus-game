@@ -12,6 +12,8 @@ export const useUiStore = defineStore('ui', () => {
   const deceasedCharacterId = ref<string | null>(null);
   // Non-blocking: shown alongside whatever activeModal is, never pauses the game.
   const biomeBannerText = ref<string | null>(null);
+  // Set from hovering the character's sprite in the game world.
+  const hoveredCharacterId = ref<string | null>(null);
 
   function raiseSignal(signal: ResourceSignal): void {
     pendingSignal.value = signal;
@@ -55,12 +57,17 @@ export const useUiStore = defineStore('ui', () => {
     biomeBannerText.value = null;
   }
 
+  function setHoveredCharacter(characterId: string | null): void {
+    hoveredCharacterId.value = characterId;
+  }
+
   return {
     activeModal,
     pendingSignal,
     lastOutcome,
     deceasedCharacterId,
     biomeBannerText,
+    hoveredCharacterId,
     raiseSignal,
     clearSignal,
     showResult,
@@ -70,5 +77,6 @@ export const useUiStore = defineStore('ui', () => {
     showGameOver,
     showBiomeBanner,
     dismissBiomeBanner,
+    setHoveredCharacter,
   };
 });

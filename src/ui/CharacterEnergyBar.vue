@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import type { Character } from '@/domain/Character';
 import type { CharacterState, ResourceType } from '@/domain/types';
 import { useConvoyStore } from '@/state/stores/convoyStore';
+import { useUiStore } from '@/state/stores/uiStore';
 
 const props = defineProps<{ character: Character }>();
 const convoyStore = useConvoyStore();
@@ -38,6 +39,8 @@ function setState(state: CharacterState): void {
 }
 
 const waterUsable = computed(() => convoyStore.currentBiome.waterUsable);
+const uiStore = useUiStore();
+const forceShow = computed(() => uiStore.hoveredCharacterId === props.character.id);
 
 function consume(type: ResourceType): void {
   convoyStore.consumeResourceFor(props.character.id, type);
@@ -51,7 +54,7 @@ function consume(type: ResourceType): void {
       <span class="name">{{ character.name }}</span>
     </div>
 
-    <div class="details">
+    <div class="details" :class="{ 'force-show': forceShow }">
       <div class="bar-track">
         <div class="bar-fill" :class="energyClass" :style="{ width: energyPercent + '%' }"></div>
       </div>
@@ -134,7 +137,8 @@ function consume(type: ResourceType): void {
 }
 
 .card:hover .details,
-.card:focus-within .details {
+.card:focus-within .details,
+.details.force-show {
   opacity: 1;
   transform: translateY(0);
   pointer-events: auto;

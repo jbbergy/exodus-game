@@ -41,11 +41,13 @@ export class MainGameScene extends Phaser.Scene {
     eventBus.on('sendCharacterForResource', this.handleSendCharacter);
     eventBus.on('resultAcknowledged', this.handleResultAcknowledged);
     eventBus.on('tributeAcknowledged', this.handleTributeAcknowledged);
+    eventBus.on('characterHoverChanged', this.handleCharacterHoverChanged);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       eventBus.off('sendCharacterForResource', this.handleSendCharacter);
       eventBus.off('resultAcknowledged', this.handleResultAcknowledged);
       eventBus.off('tributeAcknowledged', this.handleTributeAcknowledged);
+      eventBus.off('characterHoverChanged', this.handleCharacterHoverChanged);
     });
   }
 
@@ -100,6 +102,10 @@ export class MainGameScene extends Phaser.Scene {
     this.background.setBiome(biome.id);
     this.uiStore.showBiomeBanner(biome.name);
   }
+
+  private handleCharacterHoverChanged = (payload: { characterId: string | null }): void => {
+    this.uiStore.setHoveredCharacter(payload.characterId);
+  };
 
   private handleDeath(characterId: string): void {
     this.convoySystem.paused = true;
