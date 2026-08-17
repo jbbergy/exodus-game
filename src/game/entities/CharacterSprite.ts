@@ -1,9 +1,10 @@
 import Phaser from 'phaser';
 import type { Character } from '@/domain/Character';
-import { GROUND_Y, TEXTURE_KEYS } from '@/game/constants';
+import { CHARACTER_SCALE, GROUND_Y, TEXTURE_KEYS } from '@/game/constants';
 import { eventBus } from '@/state/eventBus';
+import { pointerToClientPosition } from '@/game/utils/screenCoordinates';
 
-const SLOT_SPACING = 46;
+const SLOT_SPACING = 46 * CHARACTER_SCALE;
 
 export class CharacterSprite {
   readonly character: Character;
@@ -14,6 +15,7 @@ export class CharacterSprite {
     const key = TEXTURE_KEYS.CHARACTER_PREFIX + character.id;
     this.sprite = scene.add.sprite(0, GROUND_Y, key);
     this.sprite.setOrigin(0.5, 1);
+    this.sprite.setScale(CHARACTER_SCALE);
     this.sprite.setDepth(4);
 
     this.sprite.setInteractive({ useHandCursor: true });
@@ -23,23 +25,13 @@ export class CharacterSprite {
       eventBus.emit('characterHoverChanged', { characterId: null });
     });
     this.sprite.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      const { x, y } = this.toClientPosition(pointer);
+      const { x, y } = pointerToClientPosition(this.sprite.scene, pointer);
       eventBus.emit('characterClicked', { characterId: this.character.id, x, y });
     });
   }
 
-  /** Converts the Phaser pointer's canvas-local position into viewport (clientX/clientY) coordinates. */
-  private toClientPosition(pointer: Phaser.Input.Pointer): { x: number; y: number } {
-    const game = this.sprite.scene.sys.game;
-    const rect = game.canvas.getBoundingClientRect();
-    return {
-      x: rect.left + pointer.x * (rect.width / game.scale.gameSize.width),
-      y: rect.top + pointer.y * (rect.height / game.scale.gameSize.height),
-    };
-  }
-
   private emitHover(pointer: Phaser.Input.Pointer): void {
-    const { x, y } = this.toClientPosition(pointer);
+    const { x, y } = pointerToClientPosition(this.sprite.scene, pointer);
     eventBus.emit('characterHoverChanged', { characterId: this.character.id, x, y });
   }
 
@@ -69,15 +61,15 @@ export class CharacterSprite {
     switch (this.character.state) {
       case 'pulling':
         this.sprite.setDepth(4);
-        this.sprite.setPosition(cartScreenX + 70 + slotIndex * SLOT_SPACING, GROUND_Y);
+        this.sprite.setPosition(cartScreenX + 70 * CHARACTER_SCALE + slotIndex * SLOT_SPACING, GROUND_Y);
         break;
       case 'resting':
         this.sprite.setDepth(6);
-        this.sprite.setPosition(cartScreenX - 6 + slotIndex * 12, GROUND_Y - 44);
+        this.sprite.setPosition(cartScreenX - 6 + slotIndex * 12 * CHARACTER_SCALE, GROUND_Y - 44 * CHARACTER_SCALE);
         break;
       case 'walking':
         this.sprite.setDepth(4);
-        this.sprite.setPosition(cartScreenX - 90 - slotIndex * SLOT_SPACING, GROUND_Y);
+        this.sprite.setPosition(cartScreenX - 90 * CHARACTER_SCALE - slotIndex * SLOT_SPACING, GROUND_Y);
         break;
     }
   }

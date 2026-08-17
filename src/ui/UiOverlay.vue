@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import BiomeBanner from '@/ui/BiomeBanner.vue';
+import CartStatsPanel from '@/ui/CartStatsPanel.vue';
 import CharacterStatsPanel from '@/ui/CharacterStatsPanel.vue';
 import DialogueBubble from '@/ui/DialogueBubble.vue';
 import GameOverScreen from '@/ui/GameOverScreen.vue';
@@ -17,6 +18,7 @@ const uiStore = useUiStore();
     <Hud />
     <BiomeBanner />
     <CharacterStatsPanel />
+    <CartStatsPanel />
     <RadialMenu />
     <DialogueBubble v-if="uiStore.activeModal === 'signal'" />
     <ResourceResultPopup v-else-if="uiStore.activeModal === 'result'" />

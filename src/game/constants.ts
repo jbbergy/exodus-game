@@ -63,6 +63,9 @@ export const TEXTURE_KEYS = {
   CART: 'tex-cart',
 } as const;
 
+export const CHARACTER_SCALE = 1.3;
+export const CART_SCALE = 1.5;
+
 export const BG_LAYERS = ['far', 'mid', 'near'] as const;
 export type BgLayer = (typeof BG_LAYERS)[number];
 

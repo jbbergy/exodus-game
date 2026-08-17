@@ -22,6 +22,9 @@ export const useUiStore = defineStore('ui', () => {
   const hoveredCharacterId = ref<string | null>(null);
   const hoverPosition = ref<HoverPosition | null>(null);
   let hoverClearTimer: ReturnType<typeof setTimeout> | undefined;
+  // Set from hovering the cart sprite in the game world.
+  const cartHovered = ref(false);
+  const cartHoverPosition = ref<HoverPosition | null>(null);
   // Opened by clicking a character's sprite; suppresses the hover panel while active.
   const radialMenuCharacterId = ref<string | null>(null);
   const radialMenuPosition = ref<HoverPosition | null>(null);
@@ -89,6 +92,17 @@ export const useUiStore = defineStore('ui', () => {
     clearTimeout(hoverClearTimer);
   }
 
+  /** In-world cart sprite is hovered: show the resources panel, following the cursor. */
+  function setCartHovered(position: HoverPosition): void {
+    if (radialMenuCharacterId.value) return;
+    cartHovered.value = true;
+    cartHoverPosition.value = position;
+  }
+
+  function clearCartHovered(): void {
+    cartHovered.value = false;
+  }
+
   /** No-op while a menu is already open: a stray click (e.g. one of the radial buttons
    * overlapping another character's sprite) must never swap it to a different character —
    * the player has to explicitly close the current one first. */
@@ -98,6 +112,7 @@ export const useUiStore = defineStore('ui', () => {
     radialMenuPosition.value = position;
     clearTimeout(hoverClearTimer);
     hoveredCharacterId.value = null;
+    cartHovered.value = false;
   }
 
   function closeRadialMenu(): void {
@@ -113,6 +128,8 @@ export const useUiStore = defineStore('ui', () => {
     biomeBannerText,
     hoveredCharacterId,
     hoverPosition,
+    cartHovered,
+    cartHoverPosition,
     radialMenuCharacterId,
     radialMenuPosition,
     raiseSignal,
@@ -127,6 +144,8 @@ export const useUiStore = defineStore('ui', () => {
     setHoveredCharacter,
     scheduleHoverClear,
     cancelHoverClear,
+    setCartHovered,
+    clearCartHovered,
     openRadialMenu,
     closeRadialMenu,
   };

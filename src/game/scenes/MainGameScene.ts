@@ -44,6 +44,7 @@ export class MainGameScene extends Phaser.Scene {
     eventBus.on('tributeAcknowledged', this.handleTributeAcknowledged);
     eventBus.on('characterHoverChanged', this.handleCharacterHoverChanged);
     eventBus.on('characterClicked', this.handleCharacterClicked);
+    eventBus.on('cartHoverChanged', this.handleCartHoverChanged);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       eventBus.off('sendCharacterForResource', this.handleSendCharacter);
@@ -51,6 +52,7 @@ export class MainGameScene extends Phaser.Scene {
       eventBus.off('tributeAcknowledged', this.handleTributeAcknowledged);
       eventBus.off('characterHoverChanged', this.handleCharacterHoverChanged);
       eventBus.off('characterClicked', this.handleCharacterClicked);
+      eventBus.off('cartHoverChanged', this.handleCartHoverChanged);
     });
   }
 
@@ -128,6 +130,14 @@ export class MainGameScene extends Phaser.Scene {
 
   private handleCharacterClicked = (payload: { characterId: string; x: number; y: number }): void => {
     this.uiStore.openRadialMenu(payload.characterId, { x: payload.x, y: payload.y });
+  };
+
+  private handleCartHoverChanged = (payload: { hovered: true; x: number; y: number } | { hovered: false }): void => {
+    if (payload.hovered) {
+      this.uiStore.setCartHovered({ x: payload.x, y: payload.y });
+    } else {
+      this.uiStore.clearCartHovered();
+    }
   };
 
   private handleDeath(characterId: string): void {

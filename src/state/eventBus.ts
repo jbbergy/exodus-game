@@ -9,6 +9,7 @@ export type AppEvents = {
   characterDied: { characterId: string };
   characterHoverChanged: { characterId: string; x: number; y: number } | { characterId: null };
   characterClicked: { characterId: string; x: number; y: number };
+  cartHoverChanged: { hovered: true; x: number; y: number } | { hovered: false };
   resultAcknowledged: undefined;
   tributeAcknowledged: undefined;
 };
