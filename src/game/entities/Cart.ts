@@ -3,7 +3,7 @@ import { CART_SCALE, GROUND_Y, SCREEN_WIDTH, TEXTURE_KEYS } from '@/game/constan
 import { eventBus } from '@/state/eventBus';
 import { pointerToClientPosition } from '@/game/utils/screenCoordinates';
 
-export const CART_SCREEN_X = SCREEN_WIDTH * 0.5;
+export const CART_SCREEN_X = SCREEN_WIDTH * 0.45;
 
 export class Cart {
   readonly sprite: Phaser.GameObjects.Sprite;

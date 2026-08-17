@@ -1,9 +1,25 @@
 import Phaser from 'phaser';
 import type { Character } from '@/domain/Character';
-import { CHARACTER_SCALE, GROUND_Y, TEXTURE_KEYS } from '@/game/constants';
+import {
+  CART_SCALE,
+  CART_TEXTURE_WIDTH,
+  CHARACTER_SCALE,
+  CHARACTER_TEXTURE_WIDTH,
+  GROUND_Y,
+  TEXTURE_KEYS,
+} from '@/game/constants';
 import { eventBus } from '@/state/eventBus';
 import { pointerToClientPosition } from '@/game/utils/screenCoordinates';
 
+const cartHalfWidth = (CART_TEXTURE_WIDTH / 2) * CART_SCALE;
+const characterHalfWidth = (CHARACTER_TEXTURE_WIDTH / 2) * CHARACTER_SCALE;
+
+// Derived from both scales (not just CHARACTER_SCALE) so the first pulling/walking character
+// never overlaps the cart even if CART_SCALE and CHARACTER_SCALE change independently —
+// verified that up to 5 pulling/walking characters stay within SCREEN_WIDTH (960) at the
+// current scales. Re-check the 5th slot doesn't run off either screen edge if either grows a lot.
+const PULL_OFFSET_X = cartHalfWidth + characterHalfWidth + 8;
+const WALK_OFFSET_X = cartHalfWidth + characterHalfWidth + 30;
 const SLOT_SPACING = 46 * CHARACTER_SCALE;
 
 export class CharacterSprite {
@@ -61,15 +77,15 @@ export class CharacterSprite {
     switch (this.character.state) {
       case 'pulling':
         this.sprite.setDepth(4);
-        this.sprite.setPosition(cartScreenX + 70 * CHARACTER_SCALE + slotIndex * SLOT_SPACING, GROUND_Y);
+        this.sprite.setPosition(cartScreenX + PULL_OFFSET_X + slotIndex * SLOT_SPACING, GROUND_Y);
         break;
       case 'resting':
         this.sprite.setDepth(6);
-        this.sprite.setPosition(cartScreenX - 6 + slotIndex * 12 * CHARACTER_SCALE, GROUND_Y - 44 * CHARACTER_SCALE);
+        this.sprite.setPosition(cartScreenX - 6 * CHARACTER_SCALE + slotIndex * 12 * CHARACTER_SCALE, GROUND_Y - 44 * CHARACTER_SCALE);
         break;
       case 'walking':
         this.sprite.setDepth(4);
-        this.sprite.setPosition(cartScreenX - 90 * CHARACTER_SCALE - slotIndex * SLOT_SPACING, GROUND_Y);
+        this.sprite.setPosition(cartScreenX - WALK_OFFSET_X - slotIndex * SLOT_SPACING, GROUND_Y);
         break;
     }
   }

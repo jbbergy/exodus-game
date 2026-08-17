@@ -1,11 +1,20 @@
 import Phaser from 'phaser';
 import themeMusicUrl from '@/assets/audio/music/theme.mp3';
 import type { BiomeId } from '@/domain/types';
-import { AUDIO_KEYS, bgTextureKey, MUSIC_VOLUME, SCREEN_HEIGHT, STARTING_CHARACTERS, TEXTURE_KEYS } from '@/game/constants';
+import {
+  AUDIO_KEYS,
+  bgTextureKey,
+  CART_TEXTURE_WIDTH,
+  CHARACTER_TEXTURE_WIDTH,
+  MUSIC_VOLUME,
+  SCREEN_HEIGHT,
+  STARTING_CHARACTERS,
+  TEXTURE_KEYS,
+} from '@/game/constants';
 import { AudioManager } from '@/game/systems/AudioManager';
 
 const TILE_WIDTH = 400;
-const CHARACTER_WIDTH = 40;
+const CHARACTER_WIDTH = CHARACTER_TEXTURE_WIDTH;
 const CHARACTER_HEIGHT = 64;
 
 type GroundShape = 'dune' | 'flat' | 'ruin';
@@ -121,7 +130,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   private generateCartTexture(): void {
-    const width = 96;
+    const width = CART_TEXTURE_WIDTH;
     const height = 70;
     const gfx = this.add.graphics();
     gfx.fillStyle(0x6b4226, 1);
