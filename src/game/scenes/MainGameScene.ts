@@ -103,8 +103,12 @@ export class MainGameScene extends Phaser.Scene {
     this.uiStore.showBiomeBanner(biome.name);
   }
 
-  private handleCharacterHoverChanged = (payload: { characterId: string | null }): void => {
-    this.uiStore.setHoveredCharacter(payload.characterId);
+  private handleCharacterHoverChanged = (payload: { characterId: string; x: number; y: number } | { characterId: null }): void => {
+    if (payload.characterId) {
+      this.uiStore.setHoveredCharacter(payload.characterId, { x: payload.x, y: payload.y });
+    } else {
+      this.uiStore.scheduleHoverClear();
+    }
   };
 
   private handleDeath(characterId: string): void {

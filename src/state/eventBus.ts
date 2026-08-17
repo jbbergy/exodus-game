@@ -7,7 +7,7 @@ export type AppEvents = {
   sendCharacterForResource: { characterId: string | null };
   resourceResolved: { outcome: CollectionOutcome };
   characterDied: { characterId: string };
-  characterHoverChanged: { characterId: string | null };
+  characterHoverChanged: { characterId: string; x: number; y: number } | { characterId: null };
   resultAcknowledged: undefined;
   tributeAcknowledged: undefined;
 };

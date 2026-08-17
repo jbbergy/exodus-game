@@ -33,8 +33,13 @@ const convoyStore = useConvoyStore();
 
 .characters {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 6px 10px;
+  border-radius: 20px;
+  width: fit-content;
   pointer-events: auto;
 }
 

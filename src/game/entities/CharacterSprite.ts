@@ -17,12 +17,20 @@ export class CharacterSprite {
     this.sprite.setDepth(4);
 
     this.sprite.setInteractive({ useHandCursor: true });
-    this.sprite.on('pointerover', () => {
-      eventBus.emit('characterHoverChanged', { characterId: this.character.id });
-    });
+    this.sprite.on('pointerover', (pointer: Phaser.Input.Pointer) => this.emitHover(pointer));
+    this.sprite.on('pointermove', (pointer: Phaser.Input.Pointer) => this.emitHover(pointer));
     this.sprite.on('pointerout', () => {
       eventBus.emit('characterHoverChanged', { characterId: null });
     });
+  }
+
+  /** Converts the Phaser pointer's canvas-local position into viewport (clientX/clientY) coordinates. */
+  private emitHover(pointer: Phaser.Input.Pointer): void {
+    const game = this.sprite.scene.sys.game;
+    const rect = game.canvas.getBoundingClientRect();
+    const x = rect.left + pointer.x * (rect.width / game.scale.gameSize.width);
+    const y = rect.top + pointer.y * (rect.height / game.scale.gameSize.height);
+    eventBus.emit('characterHoverChanged', { characterId: this.character.id, x, y });
   }
 
   updatePosition(cartScreenX: number, slotIndex: number): void {

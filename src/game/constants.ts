@@ -78,6 +78,8 @@ export const MUSIC_VOLUME = 0.25;
 
 export const BIOME_BANNER_DURATION_MS = 4000;
 
+export const HOVER_CLEAR_DELAY_MS = 150;
+
 export const SCREEN_WIDTH = 960;
 export const SCREEN_HEIGHT = 540;
 
