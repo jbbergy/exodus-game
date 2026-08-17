@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
-import { SCREEN_HEIGHT, STARTING_CHARACTERS, TEXTURE_KEYS } from '@/game/constants';
+import themeMusicUrl from '@/assets/audio/music/theme.mp3';
+import { AUDIO_KEYS, MUSIC_VOLUME, SCREEN_HEIGHT, STARTING_CHARACTERS, TEXTURE_KEYS } from '@/game/constants';
+import { AudioManager } from '@/game/systems/AudioManager';
 
 const TILE_WIDTH = 400;
 const CHARACTER_WIDTH = 40;
@@ -10,10 +12,19 @@ export class BootScene extends Phaser.Scene {
     super('BootScene');
   }
 
+  preload(): void {
+    this.load.audio(AUDIO_KEYS.THEME, themeMusicUrl);
+  }
+
   create(): void {
     this.generateCharacterTextures();
     this.generateCartTexture();
     this.generateBackgroundTextures();
+
+    // Started once here (not in MainGameScene) so it keeps playing uninterrupted
+    // across future scene transitions (e.g. biome changes).
+    new AudioManager(this).playMusic(AUDIO_KEYS.THEME, { volume: MUSIC_VOLUME });
+
     this.scene.start('MainGameScene');
   }
 

@@ -66,6 +66,12 @@ export const TEXTURE_KEYS = {
   BG_NEAR: 'tex-bg-near',
 } as const;
 
+export const AUDIO_KEYS = {
+  THEME: 'audio-theme',
+} as const;
+
+export const MUSIC_VOLUME = 0.25;
+
 export const SCREEN_WIDTH = 960;
 export const SCREEN_HEIGHT = 540;
 

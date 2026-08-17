@@ -20,6 +20,10 @@ dist-ssr
 
 # Claude Code local settings (personal permission overrides, not shared)
 .claude/settings.local.json
+
+# Raw audio masters (large, not needed at runtime — only the compressed
+# exports in src/assets/audio/music are loaded by the game)
+src/assets/audio/soundtrack/
 *.suo
 *.ntvs*
 *.njsproj

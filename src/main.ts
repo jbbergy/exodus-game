@@ -9,4 +9,8 @@ const app = createApp(App);
 app.use(pinia);
 app.mount('#app');
 
-new Phaser.Game(createGameConfig('game-canvas-container'));
+const game = new Phaser.Game(createGameConfig('game-canvas-container'));
+
+if (import.meta.env.DEV) {
+  (window as unknown as { __exodusGame: Phaser.Game }).__exodusGame = game;
+}
