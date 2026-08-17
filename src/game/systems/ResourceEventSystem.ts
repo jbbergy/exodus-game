@@ -30,11 +30,20 @@ export class ResourceEventSystem {
     if (living.length === 0) return null;
 
     const character = living[Math.floor(Math.random() * living.length)];
-    const resourceType: ResourceType = Math.random() < 0.5 ? 'water' : 'food';
 
     this.pending = true;
     signalCounter += 1;
-    return { id: `signal-${signalCounter}`, characterId: character.id, resourceType };
+    return { id: `signal-${signalCounter}`, characterId: character.id, resourceType: this.pickResourceType() };
+  }
+
+  private pickResourceType(): ResourceType {
+    const biome = this.convoy.currentBiome();
+    if (!biome.waterUsable) return 'food';
+
+    const { water, food } = biome.resourceBias;
+    const total = water + food;
+    if (total <= 0) return 'food';
+    return Math.random() < water / total ? 'water' : 'food';
   }
 
   /** Resolves the player's choice for a pending signal. characterId null = "send nobody". */

@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import type { CharacterState } from '@/domain/types';
+import type { BiomeId, CharacterState } from '@/domain/types';
 import { Cart, CART_SCREEN_X } from '@/game/entities/Cart';
 import { CharacterSprite } from '@/game/entities/CharacterSprite';
 import { ParallaxBackground } from '@/game/entities/ParallaxBackground';
@@ -20,13 +20,15 @@ export class MainGameScene extends Phaser.Scene {
   private convoySystem!: ConvoySystem;
   private resourceEventSystem!: ResourceEventSystem;
   private audio!: AudioManager;
+  private currentBiomeId!: BiomeId;
 
   constructor() {
     super('MainGameScene');
   }
 
   create(): void {
-    this.background = new ParallaxBackground(this);
+    this.currentBiomeId = this.convoyStore.convoy.currentBiome().id;
+    this.background = new ParallaxBackground(this, this.currentBiomeId);
     new Cart(this);
     this.characterSprites = this.convoyStore.convoy.characters.map(
       (character) => new CharacterSprite(this, character),
@@ -58,6 +60,7 @@ export class MainGameScene extends Phaser.Scene {
 
     this.background.scroll(distanceDelta);
     this.syncCharacterSprites();
+    this.syncBiome();
 
     if (newlyDead.length > 0) {
       this.handleDeath(newlyDead[0]);
@@ -79,6 +82,15 @@ export class MainGameScene extends Phaser.Scene {
       const slot = alive ? slots[state]++ : 0;
       characterSprite.updatePosition(CART_SCREEN_X, slot);
     }
+  }
+
+  private syncBiome(): void {
+    const biome = this.convoyStore.convoy.currentBiome();
+    if (biome.id === this.currentBiomeId) return;
+
+    this.currentBiomeId = biome.id;
+    this.background.setBiome(biome.id);
+    this.uiStore.showBiomeBanner(biome.name);
   }
 
   private handleDeath(characterId: string): void {

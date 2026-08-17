@@ -1,4 +1,4 @@
-import type { CharacterConfig, InventoryState } from '@/domain/types';
+import type { BiomeId, CharacterConfig, InventoryState } from '@/domain/types';
 
 export const STARTING_CHARACTERS: CharacterConfig[] = [
   {
@@ -61,16 +61,22 @@ export const STARTING_INVENTORY: InventoryState = {
 export const TEXTURE_KEYS = {
   CHARACTER_PREFIX: 'tex-character-',
   CART: 'tex-cart',
-  BG_FAR: 'tex-bg-far',
-  BG_MID: 'tex-bg-mid',
-  BG_NEAR: 'tex-bg-near',
 } as const;
+
+export const BG_LAYERS = ['far', 'mid', 'near'] as const;
+export type BgLayer = (typeof BG_LAYERS)[number];
+
+export function bgTextureKey(biomeId: BiomeId, layer: BgLayer): string {
+  return `tex-bg-${biomeId}-${layer}`;
+}
 
 export const AUDIO_KEYS = {
   THEME: 'audio-theme',
 } as const;
 
 export const MUSIC_VOLUME = 0.25;
+
+export const BIOME_BANNER_DURATION_MS = 4000;
 
 export const SCREEN_WIDTH = 960;
 export const SCREEN_HEIGHT = 540;

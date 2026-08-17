@@ -2,6 +2,8 @@ export type CharacterState = 'pulling' | 'resting' | 'walking';
 
 export type ResourceType = 'water' | 'food';
 
+export type BiomeId = 'origin' | 'desert-sand' | 'desert-ice' | 'ravaged-plain' | 'abandoned-village';
+
 export interface CharacterConfig {
   id: string;
   name: string;

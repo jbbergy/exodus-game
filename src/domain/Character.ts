@@ -38,15 +38,11 @@ export class Character {
     this.state = next;
   }
 
-  /**
-   * `pullingCount` is how many characters (including this one) are currently
-   * pulling the cart together — the load is shared, so the more of them pull,
-   * the less each one fatigues.
-   */
-  tickEnergy(deltaSeconds: number, pullingCount = 1): void {
+  /** `rate` is the signed energy change per second to apply (see Convoy.effectiveEnergyRate). */
+  tickEnergy(deltaSeconds: number, rate: number): void {
     if (!this.alive) return;
 
-    this.energy += this.energyRate(pullingCount) * deltaSeconds;
+    this.energy += rate * deltaSeconds;
     this.energy = Math.max(0, Math.min(this.maxEnergy, this.energy));
 
     if (this.energy <= 0) {

@@ -10,6 +10,8 @@ export const useUiStore = defineStore('ui', () => {
   const pendingSignal = ref<ResourceSignal | null>(null);
   const lastOutcome = ref<CollectionOutcome | null>(null);
   const deceasedCharacterId = ref<string | null>(null);
+  // Non-blocking: shown alongside whatever activeModal is, never pauses the game.
+  const biomeBannerText = ref<string | null>(null);
 
   function raiseSignal(signal: ResourceSignal): void {
     pendingSignal.value = signal;
@@ -45,11 +47,20 @@ export const useUiStore = defineStore('ui', () => {
     activeModal.value = 'gameover';
   }
 
+  function showBiomeBanner(text: string): void {
+    biomeBannerText.value = text;
+  }
+
+  function dismissBiomeBanner(): void {
+    biomeBannerText.value = null;
+  }
+
   return {
     activeModal,
     pendingSignal,
     lastOutcome,
     deceasedCharacterId,
+    biomeBannerText,
     raiseSignal,
     clearSignal,
     showResult,
@@ -57,5 +68,7 @@ export const useUiStore = defineStore('ui', () => {
     showTribute,
     dismissTribute,
     showGameOver,
+    showBiomeBanner,
+    dismissBiomeBanner,
   };
 });

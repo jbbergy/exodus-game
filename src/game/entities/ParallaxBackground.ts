@@ -1,19 +1,21 @@
 import Phaser from 'phaser';
-import { SCREEN_HEIGHT, SCREEN_WIDTH, TEXTURE_KEYS } from '@/game/constants';
+import type { BiomeId } from '@/domain/types';
+import { bgTextureKey, type BgLayer, SCREEN_HEIGHT, SCREEN_WIDTH } from '@/game/constants';
 
 interface Layer {
   sprite: Phaser.GameObjects.TileSprite;
+  name: BgLayer;
   factor: number;
 }
 
 export class ParallaxBackground {
   private readonly layers: Layer[];
 
-  constructor(scene: Phaser.Scene) {
+  constructor(scene: Phaser.Scene, initialBiomeId: BiomeId) {
     this.layers = [
-      { sprite: this.makeLayer(scene, TEXTURE_KEYS.BG_FAR), factor: 0.15 },
-      { sprite: this.makeLayer(scene, TEXTURE_KEYS.BG_MID), factor: 0.45 },
-      { sprite: this.makeLayer(scene, TEXTURE_KEYS.BG_NEAR), factor: 1 },
+      { sprite: this.makeLayer(scene, bgTextureKey(initialBiomeId, 'far')), name: 'far', factor: 0.15 },
+      { sprite: this.makeLayer(scene, bgTextureKey(initialBiomeId, 'mid')), name: 'mid', factor: 0.45 },
+      { sprite: this.makeLayer(scene, bgTextureKey(initialBiomeId, 'near')), name: 'near', factor: 1 },
     ];
   }
 
@@ -27,6 +29,13 @@ export class ParallaxBackground {
   scroll(distanceDelta: number): void {
     for (const layer of this.layers) {
       layer.sprite.tilePositionX += distanceDelta * layer.factor;
+    }
+  }
+
+  /** Instant texture swap, no fade — tilePositionX is untouched so scrolling keeps going uninterrupted. */
+  setBiome(biomeId: BiomeId): void {
+    for (const layer of this.layers) {
+      layer.sprite.setTexture(bgTextureKey(biomeId, layer.name));
     }
   }
 }

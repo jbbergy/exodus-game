@@ -11,6 +11,7 @@ const convoyStore = useConvoyStore();
       <CharacterEnergyBar v-for="character in convoyStore.characters" :key="character.id" :character="character" />
     </div>
     <div class="convoy-status">
+      <span class="biome-name">📍 {{ convoyStore.currentBiome.name }}</span>
       <span>💧 {{ convoyStore.inventory.water }}</span>
       <span>🍞 {{ convoyStore.inventory.food }}</span>
       <span v-if="convoyStore.speed === 0" class="stalled">Convoi à l'arrêt !</span>
@@ -51,5 +52,9 @@ const convoyStore = useConvoyStore();
 .stalled {
   color: #ff8f7a;
   font-weight: 600;
+}
+
+.biome-name {
+  opacity: 0.9;
 }
 </style>

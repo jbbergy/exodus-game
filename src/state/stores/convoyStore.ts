@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import { Character } from '@/domain/Character';
 import { Convoy } from '@/domain/Convoy';
 import type { CharacterState, ResourceType } from '@/domain/types';
-import { STARTING_CHARACTERS, STARTING_INVENTORY } from '@/game/constants';
+import { FOOD_RESTORE_AMOUNT, RESOURCE_UNIT_CONSUMED, STARTING_CHARACTERS, STARTING_INVENTORY, WATER_RESTORE_AMOUNT } from '@/game/constants';
 
 export const useConvoyStore = defineStore('convoy', () => {
   const convoy = ref(
@@ -17,6 +17,7 @@ export const useConvoyStore = defineStore('convoy', () => {
   const livingCharacters = computed(() => convoy.value.livingCharacters());
   const inventory = computed(() => convoy.value.inventory);
   const speed = computed(() => convoy.value.computeSpeed());
+  const currentBiome = computed(() => convoy.value.currentBiome());
 
   function findCharacter(characterId: string): Character | undefined {
     return convoy.value.characters.find((c) => c.id === characterId);
@@ -26,12 +27,19 @@ export const useConvoyStore = defineStore('convoy', () => {
     findCharacter(characterId)?.setState(state);
   }
 
-  function consumeResourceFor(characterId: string, type: ResourceType, restoreAmount: number): boolean {
+  function consumeResourceFor(characterId: string, type: ResourceType): boolean {
     const character = findCharacter(characterId);
     if (!character) return false;
-    const ok = convoy.value.consumeResource(type, 1);
+
+    const biome = convoy.value.currentBiome();
+    if (type === 'water' && !biome.waterUsable) return false;
+
+    const ok = convoy.value.consumeResource(type, RESOURCE_UNIT_CONSUMED);
     if (!ok) return false;
-    character.restoreEnergy(restoreAmount);
+
+    const baseAmount = type === 'water' ? WATER_RESTORE_AMOUNT : FOOD_RESTORE_AMOUNT;
+    const multiplier = type === 'water' ? biome.waterEnergyMultiplier : biome.foodEnergyMultiplier;
+    character.restoreEnergy(baseAmount * multiplier);
     return true;
   }
 
@@ -41,6 +49,7 @@ export const useConvoyStore = defineStore('convoy', () => {
     livingCharacters,
     inventory,
     speed,
+    currentBiome,
     findCharacter,
     setCharacterState,
     consumeResourceFor,

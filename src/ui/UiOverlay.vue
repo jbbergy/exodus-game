@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import BiomeBanner from '@/ui/BiomeBanner.vue';
 import DialogueBubble from '@/ui/DialogueBubble.vue';
 import GameOverScreen from '@/ui/GameOverScreen.vue';
 import Hud from '@/ui/Hud.vue';
@@ -12,6 +13,7 @@ const uiStore = useUiStore();
 <template>
   <div class="ui-overlay">
     <Hud />
+    <BiomeBanner />
     <DialogueBubble v-if="uiStore.activeModal === 'signal'" />
     <ResourceResultPopup v-else-if="uiStore.activeModal === 'result'" />
     <TributeScreen v-else-if="uiStore.activeModal === 'tribute'" />

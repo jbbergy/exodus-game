@@ -2,7 +2,6 @@
 import { computed } from 'vue';
 import type { Character } from '@/domain/Character';
 import type { CharacterState, ResourceType } from '@/domain/types';
-import { FOOD_RESTORE_AMOUNT, WATER_RESTORE_AMOUNT } from '@/game/constants';
 import { useConvoyStore } from '@/state/stores/convoyStore';
 
 const props = defineProps<{ character: Character }>();
@@ -38,9 +37,10 @@ function setState(state: CharacterState): void {
   convoyStore.setCharacterState(props.character.id, state);
 }
 
+const waterUsable = computed(() => convoyStore.currentBiome.waterUsable);
+
 function consume(type: ResourceType): void {
-  const amount = type === 'water' ? WATER_RESTORE_AMOUNT : FOOD_RESTORE_AMOUNT;
-  convoyStore.consumeResourceFor(props.character.id, type, amount);
+  convoyStore.consumeResourceFor(props.character.id, type);
 }
 </script>
 
@@ -71,7 +71,7 @@ function consume(type: ResourceType): void {
         </button>
       </div>
       <div class="button-row">
-        <button :disabled="convoyStore.inventory.water <= 0" @click="consume('water')">+💧</button>
+        <button :disabled="convoyStore.inventory.water <= 0 || !waterUsable" @click="consume('water')">+💧</button>
         <button :disabled="convoyStore.inventory.food <= 0" @click="consume('food')">+🍞</button>
       </div>
     </template>

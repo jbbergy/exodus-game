@@ -18,12 +18,10 @@ export class ConvoySystem {
       return { distanceDelta: 0, newlyDead: [] };
     }
 
-    const pullingCount = this.convoy.pullingCharacters().length;
-
     const newlyDead: string[] = [];
     for (const character of this.convoy.characters) {
       if (!character.alive) continue;
-      character.tickEnergy(deltaSeconds, pullingCount);
+      character.tickEnergy(deltaSeconds, this.convoy.effectiveEnergyRate(character));
       if (!character.alive) newlyDead.push(character.id);
     }
 

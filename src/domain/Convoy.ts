@@ -1,15 +1,18 @@
 import { Character } from '@/domain/Character';
+import { type BiomeDefinition, type BiomeSegment, buildBiomeSegments, createBiomeSequence, resolveBiomeAt } from '@/domain/Biome';
 import type { InventoryState, ResourceType } from '@/domain/types';
 
 export class Convoy {
   characters: Character[];
   inventory: InventoryState;
   cartPositionX: number;
+  biomeSegments: BiomeSegment[];
 
-  constructor(characters: Character[], startingInventory: InventoryState) {
+  constructor(characters: Character[], startingInventory: InventoryState, biomeSequence = createBiomeSequence()) {
     this.characters = characters;
     this.inventory = { ...startingInventory };
     this.cartPositionX = 0;
+    this.biomeSegments = buildBiomeSegments(biomeSequence);
   }
 
   livingCharacters(): Character[] {
@@ -20,9 +23,15 @@ export class Convoy {
     return this.livingCharacters().filter((c) => c.state === 'pulling');
   }
 
-  /** Signed energy change per second for `character` given the current group composition. */
+  currentBiome(): BiomeDefinition {
+    return resolveBiomeAt(this.biomeSegments, this.cartPositionX);
+  }
+
+  /** Signed energy change per second for `character`, including shared pulling load and the current biome's passive fatigue. */
   effectiveEnergyRate(character: Character): number {
-    return character.energyRate(this.pullingCharacters().length);
+    if (!character.alive) return 0;
+    const baseRate = character.energyRate(this.pullingCharacters().length);
+    return baseRate - this.currentBiome().passiveFatiguePerSecond;
   }
 
   computeSpeed(): number {
