@@ -12,11 +12,8 @@ import UiOverlay from '@/ui/UiOverlay.vue';
 <style scoped>
 .app-root {
   position: relative;
-  width: 960px;
-  height: 540px;
-  margin: 24px auto;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-  border-radius: 8px;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
 }
 
