@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { type BiomeSegment, resolveBiomeTransition } from '@/domain/Biome';
 import type { BiomeId } from '@/domain/types';
-import { BIOME_TRANSITION_DISTANCE, bgTextureKey, type BgLayer } from '@/game/constants';
+import { BG_TILE_WIDTH, BIOME_TRANSITION_DISTANCE, bgTextureKey, type BgLayer } from '@/game/constants';
 import { BIOME_PALETTES } from '@/game/systems/BiomePalettes';
 
 const SKY_DEPTH = -30;
@@ -31,6 +31,10 @@ class TransitionLayer {
   /** Screen x below which `incoming` is still hidden by the wipe mask — kept in sync so its
    * click-blocking hit test agrees with what's actually visible, not just what's opaque. */
   private incomingRevealMinX = Infinity;
+  /** Which biome/layer texture each sprite is currently drawing — tracked ourselves rather than
+   * read off the sprite (see makeAlphaBlocking for why). */
+  private currentSourceKey: string;
+  private incomingSourceKey: string;
 
   constructor(
     scene: Phaser.Scene,
@@ -45,14 +49,16 @@ class TransitionLayer {
   ) {
     this.name = name;
     this.factor = factor;
-    this.current = TransitionLayer.makeSprite(scene, bgTextureKey(initialBiomeId, name), width, height, depth);
-    this.incoming = TransitionLayer.makeSprite(scene, bgTextureKey(initialBiomeId, name), width, height, depth + 1);
+    this.currentSourceKey = bgTextureKey(initialBiomeId, name);
+    this.incomingSourceKey = this.currentSourceKey;
+    this.current = TransitionLayer.makeSprite(scene, this.currentSourceKey, width, height, depth);
+    this.incoming = TransitionLayer.makeSprite(scene, this.incomingSourceKey, width, height, depth + 1);
     this.incoming.setMask(mask);
     this.incoming.setVisible(false);
 
     if (blocksInput) {
-      this.makeAlphaBlocking(scene, this.current, () => 0);
-      this.makeAlphaBlocking(scene, this.incoming, () => this.incomingRevealMinX);
+      this.makeAlphaBlocking(scene, this.current, () => this.currentSourceKey, () => 0);
+      this.makeAlphaBlocking(scene, this.incoming, () => this.incomingSourceKey, () => this.incomingRevealMinX);
     }
   }
 
@@ -66,15 +72,26 @@ class TransitionLayer {
   /** Only the drawn (opaque) pixels of the tile should intercept clicks — everywhere else a tap
    * must fall through to the convoy underneath. A TileSprite's default hit area is its full
    * rectangle, so this replaces it with a custom test that checks that pixel's alpha instead.
-   * TileSprite composites its current, already-scrolled view into an internal canvas each frame
-   * (see TileSprite#updateCanvas) and `gameObject.texture` always points at that canvas — so the
-   * clicked local (x, y) can be read directly, no need to undo tilePositionX by hand. */
-  private makeAlphaBlocking(scene: Phaser.Scene, sprite: Phaser.GameObjects.TileSprite, revealMinX: () => number): void {
+   *
+   * `gameObject.texture`/`.frame` are NOT the biome art here — TileSprite repurposes those two
+   * for its own internal composited canvas (a leftover of the Canvas renderer path), and that
+   * canvas is deliberately left stale under WebGL (TileSprite#updateCanvas no-ops whenever
+   * `renderer.gl` is set, since WebGL tiles the source texture on the GPU instead of redrawing a
+   * canvas every frame). So this reads the real source texture we ourselves set via setTexture
+   * (tracked in currentSourceKey/incomingSourceKey) and undoes tilePositionX's scroll/wrap by
+   * hand to land on the right pixel of that BG_TILE_WIDTH-wide source. */
+  private makeAlphaBlocking(
+    scene: Phaser.Scene,
+    sprite: Phaser.GameObjects.TileSprite,
+    sourceKey: () => string,
+    revealMinX: () => number,
+  ): void {
     sprite.setInteractive({
       hitArea: new Phaser.Geom.Rectangle(0, 0, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER),
       hitAreaCallback: (_hitArea: unknown, x: number, y: number, gameObject: Phaser.GameObjects.TileSprite) => {
         if (x < revealMinX()) return false;
-        const alpha = scene.textures.getPixelAlpha(x, y, gameObject.texture.key, gameObject.frame.name);
+        const sourceX = (((x + gameObject.tilePositionX) % BG_TILE_WIDTH) + BG_TILE_WIDTH) % BG_TILE_WIDTH;
+        const alpha = scene.textures.getPixelAlpha(sourceX, y, sourceKey(), '__BASE');
         return !!alpha && alpha > 0;
       },
     });
@@ -86,11 +103,13 @@ class TransitionLayer {
   }
 
   apply(currentBiomeId: BiomeId, nextBiomeId: BiomeId | null, progress: number, width: number, height: number): void {
-    this.current.setTexture(bgTextureKey(currentBiomeId, this.name));
+    this.currentSourceKey = bgTextureKey(currentBiomeId, this.name);
+    this.current.setTexture(this.currentSourceKey);
     this.current.setSize(width, height);
 
     if (nextBiomeId) {
-      this.incoming.setTexture(bgTextureKey(nextBiomeId, this.name));
+      this.incomingSourceKey = bgTextureKey(nextBiomeId, this.name);
+      this.incoming.setTexture(this.incomingSourceKey);
       this.incoming.setSize(width, height);
       this.incoming.setVisible(progress > 0);
       this.incomingRevealMinX = width * (1 - progress);
