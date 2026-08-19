@@ -69,6 +69,7 @@ export const CART_SCALE = 3;
 // Base (unscaled) placeholder texture sizes, generated in BootScene — shared here so sprite
 // alignment math (CharacterSprite) can stay in sync with what BootScene actually draws.
 export const CHARACTER_TEXTURE_WIDTH = 40;
+export const CHARACTER_TEXTURE_HEIGHT = 64;
 export const CART_TEXTURE_WIDTH = 96;
 
 export const BG_LAYERS = ['far', 'mid', 'near'] as const;
