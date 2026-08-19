@@ -94,7 +94,7 @@ export class MainGameScene extends Phaser.Scene {
     const deltaSeconds = delta / 1000;
     const { distanceDelta, newlyDead } = this.convoySystem.tick(deltaSeconds);
 
-    this.background.scroll(distanceDelta);
+    this.background.update(distanceDelta, this.convoyStore.convoy.cartPositionX, this.convoyStore.convoy.biomeSegments);
     this.syncCharacterSprites();
     this.syncBiome();
 
@@ -139,7 +139,7 @@ export class MainGameScene extends Phaser.Scene {
     clearTimeout(this.resizeDebounceTimer);
     this.resizeDebounceTimer = setTimeout(() => {
       generateBiomeBackgrounds(this, height);
-      this.background.resize(width, height, this.currentBiomeId);
+      this.background.resize(width, height);
     }, RESIZE_DEBOUNCE_MS);
   };
 
@@ -162,7 +162,6 @@ export class MainGameScene extends Phaser.Scene {
     if (biome.id === this.currentBiomeId) return;
 
     this.currentBiomeId = biome.id;
-    this.background.setBiome(biome.id);
     this.uiStore.showBiomeBanner(biome.name);
   }
 

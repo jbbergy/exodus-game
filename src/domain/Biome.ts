@@ -107,3 +107,34 @@ export function resolveBiomeAt(segments: BiomeSegment[], distance: number): Biom
   }
   return segments[segments.length - 1].biome;
 }
+
+export interface BiomeTransition {
+  current: BiomeDefinition;
+  /** null when there's no next biome to push in yet (mid-segment, or already in the last biome). */
+  next: BiomeDefinition | null;
+  /** 0 = fully on `current`, 1 = right at the boundary, about to become `next`. Purely a visual
+   * cue — gameplay (passive fatigue, resource bias, ...) still snaps at the exact boundary via
+   * resolveBiomeAt/Convoy.currentBiome, it never blends. */
+  progress: number;
+}
+
+/** Like resolveBiomeAt, but for decor: within the last `transitionDistance` units of a segment,
+ * reports how far into the push-transition toward the next biome we are. */
+export function resolveBiomeTransition(
+  segments: BiomeSegment[],
+  distance: number,
+  transitionDistance: number,
+): BiomeTransition {
+  for (let i = 0; i < segments.length; i++) {
+    const segment = segments[i];
+    if (distance >= segment.endDistance) continue;
+
+    const remaining = segment.endDistance - distance;
+    const next = segments[i + 1]?.biome ?? null;
+    if (next && remaining <= transitionDistance) {
+      return { current: segment.biome, next, progress: 1 - remaining / transitionDistance };
+    }
+    return { current: segment.biome, next: null, progress: 0 };
+  }
+  return { current: segments[segments.length - 1].biome, next: null, progress: 0 };
+}

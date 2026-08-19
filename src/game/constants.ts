@@ -72,12 +72,17 @@ export const CHARACTER_TEXTURE_WIDTH = 40;
 export const CHARACTER_TEXTURE_HEIGHT = 64;
 export const CART_TEXTURE_WIDTH = 96;
 
-export const BG_LAYERS = ['far', 'mid', 'near'] as const;
+export const BG_LAYERS = ['background', 'ground', 'foreground'] as const;
 export type BgLayer = (typeof BG_LAYERS)[number];
 
 export function bgTextureKey(biomeId: BiomeId, layer: BgLayer): string {
   return `tex-bg-${biomeId}-${layer}`;
 }
+
+// World-distance (same unit as Convoy.cartPositionX) over which one biome's decor visually
+// pushes out the next — must stay well under the smallest BiomeDefinition.distance (2000) so a
+// transition never spans more than one biome boundary at a time.
+export const BIOME_TRANSITION_DISTANCE = 450;
 
 export const AUDIO_KEYS = {
   THEME: 'audio-theme',
