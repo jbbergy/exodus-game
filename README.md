@@ -91,3 +91,5 @@ La charrette est le cœur du gameplay. Elle transporte les ressources (eau, nour
 
 - Qui tire, qui se repose, qui marche à côté ?
 - Faut-il ralentir pour préserver un personnage fragile, ou avancer plus vite au risque de l'épuiser ?
+
+Github Page : https://jbbergy.github.io/exodus-game/
