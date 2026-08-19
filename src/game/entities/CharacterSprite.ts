@@ -52,6 +52,7 @@ export class CharacterSprite {
       color: '#ffffff',
       stroke: '#000000',
       strokeThickness: 3,
+      align: 'center',
     });
     this.statusLabel.setOrigin(0.5, 1);
 
@@ -109,17 +110,17 @@ export class CharacterSprite {
     this.updateStatusLabel();
   }
 
-  /** Interim stand-in for the 4 energy-tier skins planned later — for now the tier is spelled
-   * out as a word floating above the character's head instead of changing their sprite. Sickness
-   * takes over the label entirely while active — it's the more urgent thing to notice, and it
-   * already implies energy is only going to get worse until cured. */
+  /** Name on top, fatigue state below — interim stand-in for the 4 energy-tier skins planned
+   * later (for now the tier is spelled out as a word instead of changing the sprite). Sickness
+   * takes over the second line entirely while active — it's the more urgent thing to notice, and
+   * it already implies energy is only going to get worse until cured. */
   private updateStatusLabel(): void {
     if (this.character.sick) {
-      this.statusLabel.setText('🤒 Malade');
+      this.statusLabel.setText([this.character.name, '🤒 Malade']);
       this.statusLabel.setColor('#ff8f7a');
     } else {
       const tier = energyTierFor(this.character.energy, this.character.maxEnergy);
-      this.statusLabel.setText(energyTierLabel(tier));
+      this.statusLabel.setText([this.character.name, energyTierLabel(tier)]);
       this.statusLabel.setColor('#ffffff');
     }
     this.statusLabel.setVisible(true);
