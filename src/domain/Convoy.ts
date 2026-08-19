@@ -23,9 +23,11 @@ export class Convoy {
     return this.livingCharacters().filter((c) => c.state === 'pulling');
   }
 
-  /** At most one character is ever sick convoy-wide (see SicknessSystem). */
+  /** At most one LIVING character is ever sick convoy-wide (see SicknessSystem) — a dead
+   * character keeps `sick` set as a record of what killed them (see TributeScreen), so this
+   * must filter to `alive` or sickness could never strike again after that death. */
   sickCharacter(): Character | undefined {
-    return this.characters.find((c) => c.sick);
+    return this.characters.find((c) => c.sick && c.alive);
   }
 
   currentBiome(): BiomeDefinition {

@@ -20,7 +20,8 @@ function acknowledge(): void {
     <div class="tribute-card">
       <span class="swatch" :style="{ backgroundColor: colorHex }"></span>
       <h2>{{ character.name }}</h2>
-      <p>s'est éteint(e), épuisé(e) par le voyage.</p>
+      <p v-if="character.sick">a succombé à la maladie, faute d'avoir trouvé un remède à temps.</p>
+      <p v-else>s'est éteint(e), épuisé(e) par le voyage.</p>
       <p class="hommage">Le convoi s'arrête un instant pour lui rendre hommage.</p>
       <button @click="acknowledge">Continuer</button>
     </div>
