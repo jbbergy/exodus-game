@@ -22,7 +22,7 @@ const NEUTRAL_BIAS: Record<ResourceType, number> = { water: 1, food: 1 };
 export const BIOME_DEFINITIONS: Record<BiomeId, BiomeDefinition> = {
   origin: {
     id: 'origin',
-    name: "Terre d'origine",
+    name: 'Les Terres Ancestrales',
     distance: 2000,
     passiveFatiguePerSecond: 0,
     waterUsable: true,
@@ -32,7 +32,7 @@ export const BIOME_DEFINITIONS: Record<BiomeId, BiomeDefinition> = {
   },
   'desert-sand': {
     id: 'desert-sand',
-    name: 'Désert de sable',
+    name: 'Le Désert des Sables Maudits',
     distance: 2200,
     passiveFatiguePerSecond: 0.5,
     waterUsable: true,
@@ -42,7 +42,7 @@ export const BIOME_DEFINITIONS: Record<BiomeId, BiomeDefinition> = {
   },
   'desert-ice': {
     id: 'desert-ice',
-    name: 'Désert de glace',
+    name: 'Les Glaces du Roi Déchu',
     distance: 2200,
     passiveFatiguePerSecond: 0.5,
     waterUsable: false,
@@ -52,7 +52,7 @@ export const BIOME_DEFINITIONS: Record<BiomeId, BiomeDefinition> = {
   },
   'ravaged-plain': {
     id: 'ravaged-plain',
-    name: 'Plaine ravagée',
+    name: 'La Plaine des Cendres',
     distance: 2000,
     passiveFatiguePerSecond: 0,
     waterUsable: true,
@@ -62,7 +62,7 @@ export const BIOME_DEFINITIONS: Record<BiomeId, BiomeDefinition> = {
   },
   'abandoned-village': {
     id: 'abandoned-village',
-    name: 'Village abandonné',
+    name: 'Le Hameau des Âmes Perdues',
     distance: 2000,
     passiveFatiguePerSecond: 0,
     waterUsable: true,

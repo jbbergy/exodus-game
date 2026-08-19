@@ -2,8 +2,8 @@ import type { BiomeId, CharacterConfig, InventoryState } from '@/domain/types';
 
 export const STARTING_CHARACTERS: CharacterConfig[] = [
   {
-    id: 'aline',
-    name: 'Aline',
+    id: 'character-01',
+    name: 'Elowen',
     color: 0xff6b4a,
     maxEnergy: 100,
     fatigueRate: 3,
@@ -12,8 +12,8 @@ export const STARTING_CHARACTERS: CharacterConfig[] = [
     pullSpeedFactor: 0.7,
   },
   {
-    id: 'marc',
-    name: 'Marc',
+    id: 'character-02',
+    name: 'Torvald',
     color: 0x4a90c2,
     maxEnergy: 100,
     fatigueRate: 2,
@@ -22,8 +22,8 @@ export const STARTING_CHARACTERS: CharacterConfig[] = [
     pullSpeedFactor: 0.75,
   },
   {
-    id: 'theo',
-    name: 'Théo',
+    id: 'character-03',
+    name: 'Aldric',
     color: 0x7bc47f,
     maxEnergy: 100,
     fatigueRate: 4,
@@ -32,8 +32,8 @@ export const STARTING_CHARACTERS: CharacterConfig[] = [
     pullSpeedFactor: 0.65,
   },
   {
-    id: 'nora',
-    name: 'Nora',
+    id: 'character-04',
+    name: 'Isolde',
     color: 0xc77dd6,
     maxEnergy: 100,
     fatigueRate: 2.5,
@@ -42,8 +42,8 @@ export const STARTING_CHARACTERS: CharacterConfig[] = [
     pullSpeedFactor: 0.72,
   },
   {
-    id: 'samir',
-    name: 'Samir',
+    id: 'character-05',
+    name: 'Kaelen',
     color: 0xe8c94a,
     maxEnergy: 100,
     fatigueRate: 3.5,
