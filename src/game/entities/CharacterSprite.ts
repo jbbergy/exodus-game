@@ -1,8 +1,18 @@
 import Phaser from 'phaser';
 import type { Character } from '@/domain/Character';
-import { CART_SCALE, CART_TEXTURE_WIDTH, CHARACTER_SCALE, CHARACTER_TEXTURE_WIDTH, TEXTURE_KEYS } from '@/game/constants';
+import { energyTierFor, energyTierLabel } from '@/domain/energyTier';
+import {
+  CART_SCALE,
+  CART_TEXTURE_WIDTH,
+  CHARACTER_SCALE,
+  CHARACTER_TEXTURE_HEIGHT,
+  CHARACTER_TEXTURE_WIDTH,
+  TEXTURE_KEYS,
+} from '@/game/constants';
 import { eventBus } from '@/state/eventBus';
 import { pointerToClientPosition } from '@/game/utils/screenCoordinates';
+
+const STATUS_LABEL_GAP = 6;
 
 const cartHalfWidth = (CART_TEXTURE_WIDTH / 2) * CART_SCALE;
 const characterHalfWidth = (CHARACTER_TEXTURE_WIDTH / 2) * CHARACTER_SCALE;
@@ -25,6 +35,7 @@ const RESTING_BASE_OFFSET_X = -2 * RESTING_SLOT_SPACING;
 export class CharacterSprite {
   readonly character: Character;
   readonly sprite: Phaser.GameObjects.Sprite;
+  readonly statusLabel: Phaser.GameObjects.Text;
 
   constructor(scene: Phaser.Scene, character: Character, groundY: number) {
     this.character = character;
@@ -34,25 +45,25 @@ export class CharacterSprite {
     this.sprite.setScale(CHARACTER_SCALE);
     this.sprite.setDepth(4);
 
-    this.sprite.setInteractive({ useHandCursor: true });
-    this.sprite.on('pointerover', (pointer: Phaser.Input.Pointer) => this.emitHover(pointer));
-    this.sprite.on('pointermove', (pointer: Phaser.Input.Pointer) => this.emitHover(pointer));
-    this.sprite.on('pointerout', () => {
-      eventBus.emit('characterHoverChanged', { characterId: null });
+    this.statusLabel = scene.add.text(0, groundY, '', {
+      fontFamily: 'system-ui, sans-serif',
+      fontSize: '13px',
+      fontStyle: 'bold',
+      color: '#ffffff',
+      stroke: '#000000',
+      strokeThickness: 3,
     });
+    this.statusLabel.setOrigin(0.5, 1);
+
+    this.sprite.setInteractive({ useHandCursor: true });
     this.sprite.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       const { x, y } = pointerToClientPosition(this.sprite.scene, pointer);
       eventBus.emit('characterClicked', { characterId: this.character.id, x, y });
     });
   }
 
-  private emitHover(pointer: Phaser.Input.Pointer): void {
-    const { x, y } = pointerToClientPosition(this.sprite.scene, pointer);
-    eventBus.emit('characterHoverChanged', { characterId: this.character.id, x, y });
-  }
-
-  /** Fully stops this sprite from receiving pointer events (used while the radial menu is open,
-   * so a menu button that visually overlaps another character's sprite can't trigger it). */
+  /** Fully stops this sprite from receiving pointer events (used while the stats/actions panel
+   * is open, so a panel button that visually overlaps another character's sprite can't trigger it). */
   setInputEnabled(enabled: boolean): void {
     if (enabled) {
       // `disableInteractive()` keeps `sprite.input` around (just flips `.enabled` off), it
@@ -70,6 +81,7 @@ export class CharacterSprite {
   updatePosition(cartScreenX: number, slotIndex: number, groundY: number): void {
     if (!this.character.alive) {
       this.sprite.setAlpha(0.25);
+      this.statusLabel.setVisible(false);
       return;
     }
     this.sprite.setAlpha(1);
@@ -93,9 +105,24 @@ export class CharacterSprite {
         this.sprite.setPosition(cartScreenX - WALK_OFFSET_X - slotIndex * SLOT_SPACING, groundY);
         break;
     }
+
+    this.updateStatusLabel();
+  }
+
+  /** Interim stand-in for the 4 energy-tier skins planned later — for now the tier is spelled
+   * out as a word floating above the character's head instead of changing their sprite. */
+  private updateStatusLabel(): void {
+    const tier = energyTierFor(this.character.energy, this.character.maxEnergy);
+    this.statusLabel.setText(energyTierLabel(tier));
+    this.statusLabel.setVisible(true);
+    this.statusLabel.setDepth(this.sprite.depth + 1);
+
+    const spriteTopY = this.sprite.y - CHARACTER_TEXTURE_HEIGHT * CHARACTER_SCALE;
+    this.statusLabel.setPosition(this.sprite.x, spriteTopY - STATUS_LABEL_GAP);
   }
 
   destroy(): void {
     this.sprite.destroy();
+    this.statusLabel.destroy();
   }
 }

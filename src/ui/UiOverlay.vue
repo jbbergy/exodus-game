@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import AudioToggle from '@/ui/AudioToggle.vue';
 import BiomeBanner from '@/ui/BiomeBanner.vue';
 import CartStatsPanel from '@/ui/CartStatsPanel.vue';
 import CharacterStatsPanel from '@/ui/CharacterStatsPanel.vue';
 import DialogueBubble from '@/ui/DialogueBubble.vue';
 import GameOverScreen from '@/ui/GameOverScreen.vue';
 import Hud from '@/ui/Hud.vue';
-import RadialMenu from '@/ui/RadialMenu.vue';
+import OrientationGate from '@/ui/OrientationGate.vue';
 import ResourceResultPopup from '@/ui/ResourceResultPopup.vue';
 import TributeScreen from '@/ui/TributeScreen.vue';
 import { useUiStore } from '@/state/stores/uiStore';
@@ -16,10 +17,11 @@ const uiStore = useUiStore();
 <template>
   <div class="ui-overlay">
     <Hud />
+    <AudioToggle />
     <BiomeBanner />
-    <CharacterStatsPanel />
     <CartStatsPanel />
-    <RadialMenu />
+    <CharacterStatsPanel />
+    <OrientationGate />
     <DialogueBubble v-if="uiStore.activeModal === 'signal'" />
     <ResourceResultPopup v-else-if="uiStore.activeModal === 'result'" />
     <TributeScreen v-else-if="uiStore.activeModal === 'tribute'" />

@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { watch, type WatchStopHandle } from 'vue';
 import type { BiomeId, CharacterState } from '@/domain/types';
 import { Cart } from '@/game/entities/Cart';
 import { CharacterSprite } from '@/game/entities/CharacterSprite';
@@ -7,9 +8,11 @@ import { AudioManager } from '@/game/systems/AudioManager';
 import { generateBiomeBackgrounds } from '@/game/systems/BackgroundTextures';
 import { ConvoySystem } from '@/game/systems/ConvoySystem';
 import { ResourceEventSystem } from '@/game/systems/ResourceEventSystem';
+import { applyAudioSettings } from '@/game/utils/audioSettings';
 import { computeCartScreenX, computeGroundY } from '@/game/utils/layout';
 import { eventBus } from '@/state/eventBus';
 import { pinia } from '@/state/pinia';
+import { useAudioStore } from '@/state/stores/audioStore';
 import { useConvoyStore } from '@/state/stores/convoyStore';
 import { useUiStore } from '@/state/stores/uiStore';
 
@@ -20,6 +23,7 @@ const RESIZE_DEBOUNCE_MS = 150;
 export class MainGameScene extends Phaser.Scene {
   private readonly convoyStore = useConvoyStore(pinia);
   private readonly uiStore = useUiStore(pinia);
+  private readonly audioStore = useAudioStore(pinia);
 
   private background!: ParallaxBackground;
   private cart!: Cart;
@@ -28,10 +32,11 @@ export class MainGameScene extends Phaser.Scene {
   private resourceEventSystem!: ResourceEventSystem;
   private audio!: AudioManager;
   private currentBiomeId!: BiomeId;
-  private radialMenuWasOpen = false;
+  private anyPanelWasOpen = false;
   private groundY = 0;
   private cartScreenX = 0;
   private resizeDebounceTimer?: ReturnType<typeof setTimeout>;
+  private stopAudioWatch?: WatchStopHandle;
 
   constructor() {
     super('MainGameScene');
@@ -52,30 +57,36 @@ export class MainGameScene extends Phaser.Scene {
     this.resourceEventSystem = new ResourceEventSystem(this.convoyStore.convoy, this.time.now);
     this.audio = new AudioManager(this);
 
+    // Reacts live to the audio toggle button — this.sound is the game-wide sound manager, so
+    // this also covers the music track that's already looping from BootScene.
+    this.stopAudioWatch = watch(
+      () => this.audioStore.enabled,
+      (enabled) => applyAudioSettings(this.sound, enabled),
+    );
+
     eventBus.on('sendCharacterForResource', this.handleSendCharacter);
     eventBus.on('resultAcknowledged', this.handleResultAcknowledged);
     eventBus.on('tributeAcknowledged', this.handleTributeAcknowledged);
-    eventBus.on('characterHoverChanged', this.handleCharacterHoverChanged);
     eventBus.on('characterClicked', this.handleCharacterClicked);
-    eventBus.on('cartHoverChanged', this.handleCartHoverChanged);
+    eventBus.on('cartClicked', this.handleCartClicked);
     this.scale.on('resize', this.handleResize);
 
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       eventBus.off('sendCharacterForResource', this.handleSendCharacter);
       eventBus.off('resultAcknowledged', this.handleResultAcknowledged);
       eventBus.off('tributeAcknowledged', this.handleTributeAcknowledged);
-      eventBus.off('characterHoverChanged', this.handleCharacterHoverChanged);
       eventBus.off('characterClicked', this.handleCharacterClicked);
-      eventBus.off('cartHoverChanged', this.handleCartHoverChanged);
+      eventBus.off('cartClicked', this.handleCartClicked);
       this.scale.off('resize', this.handleResize);
       clearTimeout(this.resizeDebounceTimer);
+      this.stopAudioWatch?.();
     });
   }
 
   update(_time: number, delta: number): void {
-    this.syncRadialMenuInteractivity();
+    this.syncPanelInteractivity();
 
-    if (this.convoySystem.paused) {
+    if (this.convoySystem.paused || this.uiStore.orientationBlocked) {
       this.syncCharacterSprites();
       return;
     }
@@ -132,14 +143,18 @@ export class MainGameScene extends Phaser.Scene {
     }, RESIZE_DEBOUNCE_MS);
   };
 
-  private syncRadialMenuInteractivity(): void {
-    const isOpen = this.uiStore.radialMenuCharacterId !== null;
-    if (isOpen === this.radialMenuWasOpen) return;
+  /** Cart and character panels are mutually exclusive (see uiStore), so a single flag covers
+   * both: whichever is open, every other clickable sprite in the scene must stop reacting to
+   * pointer input until the player explicitly closes it. */
+  private syncPanelInteractivity(): void {
+    const isOpen = this.uiStore.selectedCharacterId !== null || this.uiStore.cartSelected;
+    if (isOpen === this.anyPanelWasOpen) return;
 
-    this.radialMenuWasOpen = isOpen;
+    this.anyPanelWasOpen = isOpen;
     for (const characterSprite of this.characterSprites) {
       characterSprite.setInputEnabled(!isOpen);
     }
+    this.cart.setInputEnabled(!isOpen);
   }
 
   private syncBiome(): void {
@@ -151,24 +166,12 @@ export class MainGameScene extends Phaser.Scene {
     this.uiStore.showBiomeBanner(biome.name);
   }
 
-  private handleCharacterHoverChanged = (payload: { characterId: string; x: number; y: number } | { characterId: null }): void => {
-    if (payload.characterId) {
-      this.uiStore.setHoveredCharacter(payload.characterId, { x: payload.x, y: payload.y });
-    } else {
-      this.uiStore.scheduleHoverClear();
-    }
-  };
-
   private handleCharacterClicked = (payload: { characterId: string; x: number; y: number }): void => {
-    this.uiStore.openRadialMenu(payload.characterId, { x: payload.x, y: payload.y });
+    this.uiStore.selectCharacter(payload.characterId, { x: payload.x, y: payload.y });
   };
 
-  private handleCartHoverChanged = (payload: { hovered: true; x: number; y: number } | { hovered: false }): void => {
-    if (payload.hovered) {
-      this.uiStore.setCartHovered({ x: payload.x, y: payload.y });
-    } else {
-      this.uiStore.clearCartHovered();
-    }
+  private handleCartClicked = (payload: { x: number; y: number }): void => {
+    this.uiStore.selectCart({ x: payload.x, y: payload.y });
   };
 
   private handleDeath(characterId: string): void {

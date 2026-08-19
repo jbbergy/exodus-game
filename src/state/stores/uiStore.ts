@@ -2,7 +2,6 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import type { CollectionOutcome } from '@/domain/Resource';
 import type { ResourceSignal } from '@/domain/types';
-import { HOVER_CLEAR_DELAY_MS } from '@/game/constants';
 
 export type ActiveModal = 'none' | 'signal' | 'result' | 'tribute' | 'gameover';
 
@@ -18,16 +17,14 @@ export const useUiStore = defineStore('ui', () => {
   const deceasedCharacterId = ref<string | null>(null);
   // Non-blocking: shown alongside whatever activeModal is, never pauses the game.
   const biomeBannerText = ref<string | null>(null);
-  // Set from hovering the character's sprite in the game world.
-  const hoveredCharacterId = ref<string | null>(null);
-  const hoverPosition = ref<HoverPosition | null>(null);
-  let hoverClearTimer: ReturnType<typeof setTimeout> | undefined;
-  // Set from hovering the cart sprite in the game world.
-  const cartHovered = ref(false);
-  const cartHoverPosition = ref<HoverPosition | null>(null);
-  // Opened by clicking a character's sprite; suppresses the hover panel while active.
-  const radialMenuCharacterId = ref<string | null>(null);
-  const radialMenuPosition = ref<HoverPosition | null>(null);
+  // Opened by tapping/clicking the cart sprite; drives the resources panel.
+  const cartSelected = ref(false);
+  const cartSelectedPosition = ref<HoverPosition | null>(null);
+  // Opened by tapping/clicking a character's sprite; drives the combined stats + actions panel.
+  const selectedCharacterId = ref<string | null>(null);
+  const selectedCharacterPosition = ref<HoverPosition | null>(null);
+  // True while a mobile/touch device is held in portrait — blocks play until rotated.
+  const orientationBlocked = ref(false);
 
   function raiseSignal(signal: ResourceSignal): void {
     pendingSignal.value = signal;
@@ -71,53 +68,34 @@ export const useUiStore = defineStore('ui', () => {
     biomeBannerText.value = null;
   }
 
-  /** In-world sprite is hovered: show the panel right away, cancelling any pending close. */
-  function setHoveredCharacter(characterId: string, position: HoverPosition): void {
-    if (radialMenuCharacterId.value) return;
-    clearTimeout(hoverClearTimer);
-    hoveredCharacterId.value = characterId;
-    hoverPosition.value = position;
+  /** No-op while any panel is already open: a stray tap (e.g. one of the action buttons
+   * overlapping the cart, or vice versa) must never swap the selection out from under the
+   * player — they have to explicitly close the current one first. Cart and character panels
+   * are mutually exclusive, so only one ever shows at a time. */
+  function selectCart(position: HoverPosition): void {
+    if (selectedCharacterId.value || cartSelected.value) return;
+    cartSelected.value = true;
+    cartSelectedPosition.value = position;
   }
 
-  /** Sprite is no longer hovered: close after a short grace period to avoid flicker. */
-  function scheduleHoverClear(): void {
-    clearTimeout(hoverClearTimer);
-    hoverClearTimer = setTimeout(() => {
-      hoveredCharacterId.value = null;
-    }, HOVER_CLEAR_DELAY_MS);
+  function closeCartPanel(): void {
+    cartSelected.value = false;
+    cartSelectedPosition.value = null;
   }
 
-  /** Re-hovered before the grace period elapsed: keep it open. */
-  function cancelHoverClear(): void {
-    clearTimeout(hoverClearTimer);
+  function selectCharacter(characterId: string, position: HoverPosition): void {
+    if (selectedCharacterId.value || cartSelected.value) return;
+    selectedCharacterId.value = characterId;
+    selectedCharacterPosition.value = position;
   }
 
-  /** In-world cart sprite is hovered: show the resources panel, following the cursor. */
-  function setCartHovered(position: HoverPosition): void {
-    if (radialMenuCharacterId.value) return;
-    cartHovered.value = true;
-    cartHoverPosition.value = position;
+  function closeCharacterPanel(): void {
+    selectedCharacterId.value = null;
+    selectedCharacterPosition.value = null;
   }
 
-  function clearCartHovered(): void {
-    cartHovered.value = false;
-  }
-
-  /** No-op while a menu is already open: a stray click (e.g. one of the radial buttons
-   * overlapping another character's sprite) must never swap it to a different character —
-   * the player has to explicitly close the current one first. */
-  function openRadialMenu(characterId: string, position: HoverPosition): void {
-    if (radialMenuCharacterId.value) return;
-    radialMenuCharacterId.value = characterId;
-    radialMenuPosition.value = position;
-    clearTimeout(hoverClearTimer);
-    hoveredCharacterId.value = null;
-    cartHovered.value = false;
-  }
-
-  function closeRadialMenu(): void {
-    radialMenuCharacterId.value = null;
-    radialMenuPosition.value = null;
+  function setOrientationBlocked(blocked: boolean): void {
+    orientationBlocked.value = blocked;
   }
 
   return {
@@ -126,12 +104,11 @@ export const useUiStore = defineStore('ui', () => {
     lastOutcome,
     deceasedCharacterId,
     biomeBannerText,
-    hoveredCharacterId,
-    hoverPosition,
-    cartHovered,
-    cartHoverPosition,
-    radialMenuCharacterId,
-    radialMenuPosition,
+    cartSelected,
+    cartSelectedPosition,
+    selectedCharacterId,
+    selectedCharacterPosition,
+    orientationBlocked,
     raiseSignal,
     clearSignal,
     showResult,
@@ -141,12 +118,10 @@ export const useUiStore = defineStore('ui', () => {
     showGameOver,
     showBiomeBanner,
     dismissBiomeBanner,
-    setHoveredCharacter,
-    scheduleHoverClear,
-    cancelHoverClear,
-    setCartHovered,
-    clearCartHovered,
-    openRadialMenu,
-    closeRadialMenu,
+    selectCart,
+    closeCartPanel,
+    selectCharacter,
+    closeCharacterPanel,
+    setOrientationBlocked,
   };
 });

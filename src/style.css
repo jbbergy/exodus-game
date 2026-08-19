@@ -13,6 +13,12 @@ body {
   background: #14100d;
   color: #f2ede4;
   overflow: hidden;
+  /* Prevents mobile browsers from hijacking taps/drags for pinch-zoom, double-tap-zoom,
+     or pull-to-refresh, all of which fight with the game's pointer-driven interactions. */
+  touch-action: none;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 #app {

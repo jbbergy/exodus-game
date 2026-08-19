@@ -13,10 +13,9 @@ export class Cart {
     this.sprite.setDepth(5);
 
     this.sprite.setInteractive({ useHandCursor: true });
-    this.sprite.on('pointerover', (pointer: Phaser.Input.Pointer) => this.emitHover(pointer));
-    this.sprite.on('pointermove', (pointer: Phaser.Input.Pointer) => this.emitHover(pointer));
-    this.sprite.on('pointerout', () => {
-      eventBus.emit('cartHoverChanged', { hovered: false });
+    this.sprite.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      const { x, y } = pointerToClientPosition(this.sprite.scene, pointer);
+      eventBus.emit('cartClicked', { x, y });
     });
   }
 
@@ -24,8 +23,17 @@ export class Cart {
     this.sprite.setPosition(x, y);
   }
 
-  private emitHover(pointer: Phaser.Input.Pointer): void {
-    const { x, y } = pointerToClientPosition(this.sprite.scene, pointer);
-    eventBus.emit('cartHoverChanged', { hovered: true, x, y });
+  /** Fully stops the cart from receiving pointer events (used while a character's stats/actions
+   * panel is open, so a panel visually overlapping the cart can't also trigger it). */
+  setInputEnabled(enabled: boolean): void {
+    if (enabled) {
+      if (this.sprite.input) {
+        this.sprite.input.enabled = true;
+      } else {
+        this.sprite.setInteractive({ useHandCursor: true });
+      }
+    } else {
+      this.sprite.disableInteractive();
+    }
   }
 }
