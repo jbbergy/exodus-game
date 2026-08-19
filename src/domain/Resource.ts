@@ -6,4 +6,5 @@ export interface CollectionOutcome {
   energyCost: number;
   quantityGained: number;
   died: boolean;
+  remedyFound: boolean;
 }

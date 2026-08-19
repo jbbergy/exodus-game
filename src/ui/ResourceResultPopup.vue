@@ -29,6 +29,7 @@ onUnmounted(() => {
     <p>
       {{ characterName }} a rapporté <strong>{{ outcome.quantityGained }} {{ resourceLabel }}</strong>
     </p>
+    <p v-if="outcome.remedyFound" class="remedy">💊 Un remède a aussi été trouvé !</p>
     <p class="cost">Coût : {{ outcome.energyCost }} énergie</p>
     <p class="hint">(cliquer pour continuer)</p>
   </div>
@@ -59,6 +60,12 @@ onUnmounted(() => {
 .cost {
   opacity: 0.8;
   font-size: 12px;
+}
+
+.remedy {
+  color: #7fd88f;
+  font-weight: 600;
+  font-size: 13px;
 }
 
 .hint {

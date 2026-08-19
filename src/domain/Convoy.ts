@@ -23,6 +23,11 @@ export class Convoy {
     return this.livingCharacters().filter((c) => c.state === 'pulling');
   }
 
+  /** At most one character is ever sick convoy-wide (see SicknessSystem). */
+  sickCharacter(): Character | undefined {
+    return this.characters.find((c) => c.sick);
+  }
+
   currentBiome(): BiomeDefinition {
     return resolveBiomeAt(this.biomeSegments, this.cartPositionX);
   }
@@ -51,6 +56,23 @@ export class Convoy {
   consumeResource(type: ResourceType, amount: number): boolean {
     if (this.inventory[type] < amount) return false;
     this.inventory[type] -= amount;
+    return true;
+  }
+
+  addRemedy(amount: number): void {
+    this.inventory.remedy += amount;
+  }
+
+  /** The only way to cure a sick character. Returns false if there's no remedy in stock, or the
+   * character isn't actually sick (nothing to do). */
+  useRemedy(characterId: string): boolean {
+    if (this.inventory.remedy <= 0) return false;
+
+    const character = this.characters.find((c) => c.id === characterId);
+    if (!character || !character.alive || !character.sick) return false;
+
+    this.inventory.remedy -= 1;
+    character.cure();
     return true;
   }
 }

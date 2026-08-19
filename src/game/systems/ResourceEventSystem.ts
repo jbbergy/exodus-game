@@ -2,7 +2,7 @@ import type { Convoy } from '@/domain/Convoy';
 import type { CollectionOutcome } from '@/domain/Resource';
 import type { ResourceSignal, ResourceType } from '@/domain/types';
 import { RESOURCE_SIGNAL_MAX_INTERVAL_MS, RESOURCE_SIGNAL_MIN_INTERVAL_MS, RESOURCE_SIGNAL_RESPONSE_TIMEOUT_MS } from '@/game/constants';
-import { rollHiddenEnergyCost, rollResourceQuantity } from '@/game/systems/EnergyRng';
+import { rollHiddenEnergyCost, rollRemedyFound, rollResourceQuantity } from '@/game/systems/EnergyRng';
 
 let signalCounter = 0;
 
@@ -73,10 +73,13 @@ export class ResourceEventSystem {
     }
 
     const quantityGained = rollResourceQuantity(resourceType);
+    let remedyFound = false;
     if (!died) {
       this.convoy.addResource(resourceType, quantityGained);
+      remedyFound = rollRemedyFound();
+      if (remedyFound) this.convoy.addRemedy(1);
     }
 
-    return { characterId, resourceType, energyCost, quantityGained, died };
+    return { characterId, resourceType, energyCost, quantityGained, died, remedyFound };
   }
 }

@@ -8,6 +8,7 @@ import { AudioManager } from '@/game/systems/AudioManager';
 import { generateBiomeBackgrounds } from '@/game/systems/BackgroundTextures';
 import { ConvoySystem } from '@/game/systems/ConvoySystem';
 import { ResourceEventSystem } from '@/game/systems/ResourceEventSystem';
+import { SicknessSystem } from '@/game/systems/SicknessSystem';
 import { applyAudioSettings } from '@/game/utils/audioSettings';
 import { computeCartScreenX, computeGroundY } from '@/game/utils/layout';
 import { eventBus } from '@/state/eventBus';
@@ -30,6 +31,7 @@ export class MainGameScene extends Phaser.Scene {
   private characterSprites: CharacterSprite[] = [];
   private convoySystem!: ConvoySystem;
   private resourceEventSystem!: ResourceEventSystem;
+  private sicknessSystem!: SicknessSystem;
   private audio!: AudioManager;
   private currentBiomeId!: BiomeId;
   private anyPanelWasOpen = false;
@@ -55,6 +57,7 @@ export class MainGameScene extends Phaser.Scene {
 
     this.convoySystem = new ConvoySystem(this.convoyStore.convoy);
     this.resourceEventSystem = new ResourceEventSystem(this.convoyStore.convoy, this.time.now);
+    this.sicknessSystem = new SicknessSystem(this.convoyStore.convoy, this.time.now);
     this.audio = new AudioManager(this);
 
     // Reacts live to the audio toggle button — this.sound is the game-wide sound manager, so
@@ -97,6 +100,7 @@ export class MainGameScene extends Phaser.Scene {
     this.background.update(distanceDelta, this.convoyStore.convoy.cartPositionX, this.convoyStore.convoy.biomeSegments);
     this.syncCharacterSprites();
     this.syncBiome();
+    this.sicknessSystem.maybeSicken(this.time.now);
 
     if (newlyDead.length > 0) {
       this.handleDeath(newlyDead[0]);

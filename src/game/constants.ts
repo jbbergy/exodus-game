@@ -56,6 +56,7 @@ export const STARTING_CHARACTERS: CharacterConfig[] = [
 export const STARTING_INVENTORY: InventoryState = {
   water: 5,
   food: 5,
+  remedy: 0,
 };
 
 export const TEXTURE_KEYS = {
@@ -100,11 +101,14 @@ export const GROUND_Y_FRACTION = 420 / 540;
 
 // Horizontal tiling unit for the procedurally generated parallax backgrounds — independent of
 // viewport size, since TileSprite repeats it seamlessly along X regardless of display width.
-export const BG_TILE_WIDTH = 400;
+// Wide enough that its handful of background/foreground features don't visibly repeat within a
+// single screen on common viewport widths.
+export const BG_TILE_WIDTH = 900;
 
-export const RESOURCE_SIGNAL_MIN_INTERVAL_MS = 45000;
-export const RESOURCE_SIGNAL_MAX_INTERVAL_MS = 90000;
-export const RESOURCE_SIGNAL_RESPONSE_TIMEOUT_MS = 5000;
+// Slightly shorter than before so resource-gathering opportunities come up a bit more often.
+export const RESOURCE_SIGNAL_MIN_INTERVAL_MS = 26000;
+export const RESOURCE_SIGNAL_MAX_INTERVAL_MS = 50000;
+export const RESOURCE_SIGNAL_RESPONSE_TIMEOUT_MS = 10000;
 
 export const HIDDEN_COST_MAX = 50;
 export const HIDDEN_COST_SKEW = 2.2;
@@ -115,5 +119,18 @@ export const RESOURCE_QUANTITY_MAX = 3;
 export const WATER_RESTORE_AMOUNT = 15;
 export const FOOD_RESTORE_AMOUNT = 25;
 export const RESOURCE_UNIT_CONSUMED = 1;
+
+// Chance that a successful water/food gathering trip also turns up a remedy — the only cure for
+// sickness (see SicknessSystem / Character.sick).
+export const REMEDY_FIND_CHANCE = 0.25;
+
+// How often, at random, a random living character falls sick — only one can be sick at a time
+// (see Convoy.sickCharacter).
+export const SICKNESS_MIN_INTERVAL_MS = 60000;
+export const SICKNESS_MAX_INTERVAL_MS = 120000;
+
+// A sick character loses energy this much faster while pulling, and can't recover it at all
+// (see Character.energyRate/restoreEnergy) until cured with a remedy.
+export const SICK_FATIGUE_MULTIPLIER = 1.5;
 
 export const TRIBUTE_SCREEN_MIN_DURATION_MS = 1500;

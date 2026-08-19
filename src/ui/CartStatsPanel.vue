@@ -7,7 +7,7 @@ const convoyStore = useConvoyStore();
 const uiStore = useUiStore();
 
 const PANEL_WIDTH = 180;
-const PANEL_MAX_HEIGHT = 160;
+const PANEL_MAX_HEIGHT = 180;
 const VIEWPORT_MARGIN = 8;
 
 // Clamped to the viewport so a tap near an edge on a small mobile-landscape screen never
@@ -39,6 +39,10 @@ const panelStyle = computed(() => {
         <div class="resource-row">
           <span>🍞 Nourriture</span>
           <span>{{ convoyStore.inventory.food }}</span>
+        </div>
+        <div class="resource-row">
+          <span>💊 Remède</span>
+          <span>{{ convoyStore.inventory.remedy }}</span>
         </div>
         <div class="resource-row">
           <span>Vitesse</span>

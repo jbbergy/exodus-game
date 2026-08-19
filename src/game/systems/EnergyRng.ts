@@ -2,6 +2,7 @@ import type { ResourceType } from '@/domain/types';
 import {
   HIDDEN_COST_MAX,
   HIDDEN_COST_SKEW,
+  REMEDY_FIND_CHANCE,
   RESOURCE_QUANTITY_MAX,
   RESOURCE_QUANTITY_MIN,
 } from '@/game/constants';
@@ -19,4 +20,8 @@ export function rollHiddenEnergyCost(): number {
 export function rollResourceQuantity(_resourceType: ResourceType): number {
   const span = RESOURCE_QUANTITY_MAX - RESOURCE_QUANTITY_MIN + 1;
   return RESOURCE_QUANTITY_MIN + Math.floor(Math.random() * span);
+}
+
+export function rollRemedyFound(): boolean {
+  return Math.random() < REMEDY_FIND_CHANCE;
 }

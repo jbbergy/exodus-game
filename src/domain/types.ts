@@ -24,4 +24,6 @@ export interface ResourceSignal {
 export interface InventoryState {
   water: number;
   food: number;
+  /** Cures a sick character — found opportunistically when gathering water/food, see EnergyRng.rollRemedyFound. */
+  remedy: number;
 }

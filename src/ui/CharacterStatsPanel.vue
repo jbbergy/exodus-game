@@ -62,16 +62,29 @@ const resourceActions = computed<CharacterAction[]>(() => {
     {
       key: 'water',
       label: '💧 Eau',
-      disabled: convoyStore.inventory.water <= 0 || !waterUsable.value,
+      disabled: convoyStore.inventory.water <= 0 || !waterUsable.value || !c.canReceiveResource('water'),
       run: () => convoyStore.consumeResourceFor(c.id, 'water'),
     },
     {
       key: 'food',
       label: '🍞 Nourriture',
-      disabled: convoyStore.inventory.food <= 0,
+      disabled: convoyStore.inventory.food <= 0 || !c.canReceiveResource('food'),
       run: () => convoyStore.consumeResourceFor(c.id, 'food'),
     },
   ];
+});
+
+// Kept out of resourceActions/its own row — sick is the rare, urgent case, and cramming a third
+// button into that row makes all three cramped and hard to tap on a small mobile panel.
+const remedyAction = computed<CharacterAction | null>(() => {
+  const c = character.value;
+  if (!c || !c.sick) return null;
+  return {
+    key: 'remedy',
+    label: '💊 Soigner',
+    disabled: convoyStore.inventory.remedy <= 0,
+    run: () => convoyStore.cureCharacter(c.id),
+  };
 });
 
 const PANEL_WIDTH = 220;
@@ -113,6 +126,7 @@ function runResourceAction(action: CharacterAction): void {
         <div class="header">
           <span class="swatch" :style="{ backgroundColor: colorHex }"></span>
           <span class="name">{{ character.name }}</span>
+          <span v-if="character.sick" class="sick-badge">🤒 Malade</span>
           <button class="close-btn" @click="uiStore.closeCharacterPanel">✕</button>
         </div>
 
@@ -146,6 +160,11 @@ function runResourceAction(action: CharacterAction): void {
               @click="runResourceAction(action)"
             >
               {{ action.label }}
+            </button>
+          </div>
+          <div v-if="remedyAction" class="action-group">
+            <button class="action-btn remedy-btn" :disabled="remedyAction.disabled" @click="runResourceAction(remedyAction)">
+              {{ remedyAction.label }}
             </button>
           </div>
         </div>
@@ -193,6 +212,13 @@ function runResourceAction(action: CharacterAction): void {
 
 .name {
   flex: 1;
+}
+
+.sick-badge {
+  font-size: 10px;
+  font-weight: 700;
+  color: #ff8f7a;
+  white-space: nowrap;
 }
 
 .close-btn {
@@ -296,5 +322,9 @@ function runResourceAction(action: CharacterAction): void {
 .action-btn:disabled {
   opacity: 0.35;
   cursor: not-allowed;
+}
+
+.remedy-btn {
+  background: rgba(224, 90, 74, 0.35);
 }
 </style>

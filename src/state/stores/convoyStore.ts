@@ -30,6 +30,7 @@ export const useConvoyStore = defineStore('convoy', () => {
   function consumeResourceFor(characterId: string, type: ResourceType): boolean {
     const character = findCharacter(characterId);
     if (!character) return false;
+    if (!character.canReceiveResource(type)) return false;
 
     const biome = convoy.value.currentBiome();
     if (type === 'water' && !biome.waterUsable) return false;
@@ -43,6 +44,10 @@ export const useConvoyStore = defineStore('convoy', () => {
     return true;
   }
 
+  function cureCharacter(characterId: string): boolean {
+    return convoy.value.useRemedy(characterId);
+  }
+
   return {
     convoy,
     characters,
@@ -53,5 +58,6 @@ export const useConvoyStore = defineStore('convoy', () => {
     findCharacter,
     setCharacterState,
     consumeResourceFor,
+    cureCharacter,
   };
 });
