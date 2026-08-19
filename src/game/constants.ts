@@ -83,11 +83,10 @@ export const AUDIO_KEYS = {
   THEME: 'audio-theme',
 } as const;
 
-export const MUSIC_VOLUME = 0.25;
+// Master volume applied whenever the player has audio turned on via the toggle button.
+export const AUDIO_VOLUME_WHEN_ENABLED = 0.2;
 
 export const BIOME_BANNER_DURATION_MS = 4000;
-
-export const HOVER_CLEAR_DELAY_MS = 150;
 
 // With Scale.RESIZE the game's logical width/height track the viewport, so layout is expressed
 // as fractions of the current scene size rather than fixed pixel constants (see game/utils/layout.ts).

@@ -1,11 +1,21 @@
 import Phaser from 'phaser';
 import themeMusicUrl from '@/assets/audio/music/theme.mp3';
-import { AUDIO_KEYS, CART_TEXTURE_WIDTH, CHARACTER_TEXTURE_WIDTH, MUSIC_VOLUME, STARTING_CHARACTERS, TEXTURE_KEYS } from '@/game/constants';
+import {
+  AUDIO_KEYS,
+  CART_TEXTURE_WIDTH,
+  CHARACTER_TEXTURE_HEIGHT,
+  CHARACTER_TEXTURE_WIDTH,
+  STARTING_CHARACTERS,
+  TEXTURE_KEYS,
+} from '@/game/constants';
 import { generateBiomeBackgrounds } from '@/game/systems/BackgroundTextures';
+import { applyAudioSettings } from '@/game/utils/audioSettings';
 import { AudioManager } from '@/game/systems/AudioManager';
+import { pinia } from '@/state/pinia';
+import { useAudioStore } from '@/state/stores/audioStore';
 
 const CHARACTER_WIDTH = CHARACTER_TEXTURE_WIDTH;
-const CHARACTER_HEIGHT = 64;
+const CHARACTER_HEIGHT = CHARACTER_TEXTURE_HEIGHT;
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -21,9 +31,13 @@ export class BootScene extends Phaser.Scene {
     this.generateCartTexture();
     generateBiomeBackgrounds(this, this.scale.height);
 
+    // Applied before the first play() call so the music never starts audibly, even for a
+    // frame, while audio is off (off by default — see audioStore).
+    applyAudioSettings(this.sound, useAudioStore(pinia).enabled);
+
     // Started once here (not in MainGameScene) so it keeps playing uninterrupted
     // across future scene transitions (e.g. biome changes).
-    new AudioManager(this).playMusic(AUDIO_KEYS.THEME, { volume: MUSIC_VOLUME });
+    new AudioManager(this).playMusic(AUDIO_KEYS.THEME);
 
     this.scene.start('MainGameScene');
   }
