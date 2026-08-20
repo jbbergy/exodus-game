@@ -1,4 +1,4 @@
-import type { BiomeId, CharacterConfig, InventoryState } from '@/domain/types';
+import type { CharacterConfig, InventoryState } from '@/domain/types';
 
 export const STARTING_CHARACTERS: CharacterConfig[] = [
   {
@@ -73,16 +73,11 @@ export const CHARACTER_TEXTURE_WIDTH = 40;
 export const CHARACTER_TEXTURE_HEIGHT = 64;
 export const CART_TEXTURE_WIDTH = 96;
 
-export const BG_LAYERS = ['background', 'ground', 'foreground'] as const;
-export type BgLayer = (typeof BG_LAYERS)[number];
-
-export function bgTextureKey(biomeId: BiomeId, layer: BgLayer): string {
-  return `tex-bg-${biomeId}-${layer}`;
-}
-
-// World-distance (same unit as Convoy.cartPositionX) over which one biome's decor visually
-// pushes out the next — must stay well under the smallest BiomeDefinition.distance (2000) so a
-// transition never spans more than one biome boundary at a time.
+// World-distance (same unit as Convoy.cartPositionX) over which the sky/ground-band colors
+// crossfade from one biome to the next (see Backdrop) — must stay well under the smallest
+// BiomeDefinition.distance (2000) so a transition never spans more than one biome boundary at a
+// time. Streamed decor shapes (DecorStreamManager) don't use this — they switch biome outright
+// the instant construction crosses the segment boundary, no crossfade.
 export const BIOME_TRANSITION_DISTANCE = 450;
 
 export const AUDIO_KEYS = {
@@ -99,10 +94,11 @@ export const BIOME_BANNER_DURATION_MS = 4000;
 export const CART_X_FRACTION = 0.45;
 export const GROUND_Y_FRACTION = 420 / 540;
 
-// Horizontal tiling unit for the procedurally generated parallax backgrounds — independent of
-// viewport size, since TileSprite repeats it seamlessly along X regardless of display width.
-// Wide enough that its handful of background/foreground features don't visibly repeat within a
-// single screen on common viewport widths.
+// Reference screen-pixel width the hand-authored per-biome decor arrays in BiomePalettes.ts are
+// laid out against (their xFraction/widthFraction values are fractions of this) — independent of
+// actual viewport width. DecorPlacement derives each streamed layer's real-world repeat period
+// from it (BG_TILE_WIDTH / parallax factor), so the same density/spacing this used to produce as
+// a literal repeating texture tile is reproduced once decor is individually streamed instead.
 export const BG_TILE_WIDTH = 900;
 
 // Slightly shorter than before so resource-gathering opportunities come up a bit more often.

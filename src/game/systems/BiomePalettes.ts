@@ -3,9 +3,9 @@ import type { BiomeId } from '@/domain/types';
 export type BackgroundStyle = 'mountains' | 'forest' | 'ruins';
 export type ForegroundShape = 'block' | 'roof' | 'spike' | 'round';
 
-/** A jagged skyline is built from one continuous polygon through these peaks/valleys — using a
- * hand-authored, irregular sequence (not evenly spaced, not symmetric) is what keeps it from
- * reading as a repeating "bump" pattern. */
+/** A jagged skyline is built from a chain of ridge panels strung through these peaks/valleys
+ * (see DecorPlacement.mountainPanelsForCycle) — using a hand-authored, irregular sequence (not
+ * evenly spaced, not symmetric) is what keeps it from reading as a repeating "bump" pattern. */
 export interface MountainPeak {
   xFraction: number;
   /** Fraction of viewport height, measured up from the ground line. */
@@ -26,9 +26,9 @@ export interface RuinPiece {
 }
 
 export interface ForegroundElement {
-  /** Fraction of BG_TILE_WIDTH — where the element sits within one repeating tile. Kept sparse
-   * (2-3 per tile) and mostly narrow so a tall one only briefly covers the convoy as it scrolls
-   * past, the way a small house would. */
+  /** Fraction of BG_TILE_WIDTH — where the element sits within one repeat period of the streamed
+   * decor (see DecorPlacement.periodWorld). Kept sparse (2-3 per period) and mostly narrow so a
+   * tall one only briefly covers the convoy as it scrolls past, the way a small house would. */
   xFraction: number;
   widthFraction: number;
   /** Fraction of viewport height, measured up from the ground line. */

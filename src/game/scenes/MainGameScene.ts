@@ -1,11 +1,11 @@
 import Phaser from 'phaser';
 import { watch, type WatchStopHandle } from 'vue';
 import type { BiomeId, CharacterState } from '@/domain/types';
+import { Backdrop } from '@/game/entities/Backdrop';
 import { Cart } from '@/game/entities/Cart';
 import { CharacterSprite } from '@/game/entities/CharacterSprite';
-import { ParallaxBackground } from '@/game/entities/ParallaxBackground';
+import { DecorStreamManager } from '@/game/entities/DecorStreamManager';
 import { AudioManager } from '@/game/systems/AudioManager';
-import { generateBiomeBackgrounds } from '@/game/systems/BackgroundTextures';
 import { ConvoySystem } from '@/game/systems/ConvoySystem';
 import { ResourceEventSystem } from '@/game/systems/ResourceEventSystem';
 import { SicknessSystem } from '@/game/systems/SicknessSystem';
@@ -18,7 +18,7 @@ import { useConvoyStore } from '@/state/stores/convoyStore';
 import { useUiStore } from '@/state/stores/uiStore';
 
 // Debounced so a window drag-resize (which can fire many 'resize' events per second) doesn't
-// regenerate all 15 background textures on every intermediate frame.
+// rebuild every streamed decor shape on every intermediate frame.
 const RESIZE_DEBOUNCE_MS = 150;
 
 export class MainGameScene extends Phaser.Scene {
@@ -26,7 +26,8 @@ export class MainGameScene extends Phaser.Scene {
   private readonly uiStore = useUiStore(pinia);
   private readonly audioStore = useAudioStore(pinia);
 
-  private background!: ParallaxBackground;
+  private background!: Backdrop;
+  private decor!: DecorStreamManager;
   private cart!: Cart;
   private characterSprites: CharacterSprite[] = [];
   private convoySystem!: ConvoySystem;
@@ -49,7 +50,18 @@ export class MainGameScene extends Phaser.Scene {
     this.groundY = computeGroundY(this.scale.height);
     this.cartScreenX = computeCartScreenX(this.scale.width);
 
-    this.background = new ParallaxBackground(this, this.currentBiomeId, this.scale.width, this.scale.height);
+    const biomeSegments = this.convoyStore.convoy.biomeSegments;
+    const cartPositionX = this.convoyStore.convoy.cartPositionX;
+    this.background = new Backdrop(this, this.currentBiomeId, this.scale.width, this.scale.height, this.groundY);
+    this.decor = new DecorStreamManager(
+      this,
+      biomeSegments,
+      cartPositionX,
+      this.cartScreenX,
+      this.groundY,
+      this.scale.width,
+      this.scale.height,
+    );
     this.cart = new Cart(this, this.cartScreenX, this.groundY);
     this.characterSprites = this.convoyStore.convoy.characters.map(
       (character) => new CharacterSprite(this, character, this.groundY),
@@ -95,9 +107,12 @@ export class MainGameScene extends Phaser.Scene {
     }
 
     const deltaSeconds = delta / 1000;
-    const { distanceDelta, newlyDead } = this.convoySystem.tick(deltaSeconds);
+    const { newlyDead } = this.convoySystem.tick(deltaSeconds);
 
-    this.background.update(distanceDelta, this.convoyStore.convoy.cartPositionX, this.convoyStore.convoy.biomeSegments);
+    const cartPositionX = this.convoyStore.convoy.cartPositionX;
+    const biomeSegments = this.convoyStore.convoy.biomeSegments;
+    this.background.update(cartPositionX, biomeSegments);
+    this.decor.update(cartPositionX, biomeSegments, this.cartScreenX, this.scale.width);
     this.syncCharacterSprites();
     this.syncBiome();
     this.sicknessSystem.maybeSicken(this.time.now);
@@ -142,8 +157,10 @@ export class MainGameScene extends Phaser.Scene {
 
     clearTimeout(this.resizeDebounceTimer);
     this.resizeDebounceTimer = setTimeout(() => {
-      generateBiomeBackgrounds(this, height);
-      this.background.resize(width, height);
+      const cartPositionX = this.convoyStore.convoy.cartPositionX;
+      const biomeSegments = this.convoyStore.convoy.biomeSegments;
+      this.background.resize(width, height, this.groundY, cartPositionX, biomeSegments);
+      this.decor.resize(width, height, cartPositionX, this.cartScreenX, this.groundY, biomeSegments);
     }, RESIZE_DEBOUNCE_MS);
   };
 

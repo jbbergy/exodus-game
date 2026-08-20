@@ -8,7 +8,6 @@ import {
   STARTING_CHARACTERS,
   TEXTURE_KEYS,
 } from '@/game/constants';
-import { generateBiomeBackgrounds } from '@/game/systems/BackgroundTextures';
 import { applyAudioSettings } from '@/game/utils/audioSettings';
 import { AudioManager } from '@/game/systems/AudioManager';
 import { pinia } from '@/state/pinia';
@@ -29,7 +28,6 @@ export class BootScene extends Phaser.Scene {
   create(): void {
     this.generateCharacterTextures();
     this.generateCartTexture();
-    generateBiomeBackgrounds(this, this.scale.height);
 
     // Applied before the first play() call so the music never starts audibly, even for a
     // frame, while audio is off (off by default — see audioStore).
