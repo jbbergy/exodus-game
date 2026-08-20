@@ -38,8 +38,17 @@ function darken(color: number, factor: number): number {
 const POSITION_JITTER_FRACTION = 0.015;
 const SIZE_JITTER_FRACTION = 0.2;
 
+// Large foreground elements (houses, tall spires) are only allowed to spawn on every Nth cycle
+// (see foregroundElementsInRange) — this is what guarantees two of them can never land back to
+// back and gang up on the convoy's view/clicks, on top of each one's own `frequency` roll.
+const LARGE_ELEMENT_MIN_GAP_CYCLES = 4;
+
 function inRange(x: number, start: number, end: number): boolean {
   return x >= start && x < end;
+}
+
+function mod(n: number, m: number): number {
+  return ((n % m) + m) % m;
 }
 
 interface BiomeRange {
@@ -234,8 +243,18 @@ export function foregroundElementsInRange(
 
     for (let c = firstCycle; c <= lastCycle; c++) {
       const cycleStart = range.phaseOrigin + c * period;
+      // Only every LARGE_ELEMENT_MIN_GAP_CYCLES-th cycle is even eligible to carry a large
+      // element — combined with the single-winner pick below, this makes it structurally
+      // impossible (not just unlikely) for two large elements to end up next to each other,
+      // whether it's the same one repeating or two different ones in the same biome.
+      const isLargeEligibleCycle = mod(c, LARGE_ELEMENT_MIN_GAP_CYCLES) === 0;
+      const largeCandidates: { element: (typeof palette.foregroundElements)[number]; p: number }[] = [];
 
       palette.foregroundElements.forEach((element, p) => {
+        if ((element.frequency ?? 1) < 1) {
+          largeCandidates.push({ element, p });
+          return;
+        }
         const seed = range.phaseOrigin + c * 977 + p * 37;
         const worldX = cycleStart + element.xFraction * period + jitter(seed + 1, period * POSITION_JITTER_FRACTION);
         if (!inRange(worldX, range.from, range.to)) return;
@@ -249,6 +268,33 @@ export function foregroundElementsInRange(
           color: element.color,
         });
       });
+
+      if (!isLargeEligibleCycle || largeCandidates.length === 0) continue;
+
+      // Weighted single pick among this cycle's large candidates (own salt, distinct from the
+      // per-element seeds below) — at most one large element per eligible cycle, never several
+      // stacked together.
+      const roll = hash(range.phaseOrigin + c * 977 + 991);
+      let acc = 0;
+      for (const { element, p } of largeCandidates) {
+        acc += element.frequency ?? 0;
+        if (roll >= acc) continue;
+
+        const seed = range.phaseOrigin + c * 977 + p * 37;
+        const worldX = cycleStart + element.xFraction * period + jitter(seed + 1, period * POSITION_JITTER_FRACTION);
+        if (inRange(worldX, range.from, range.to)) {
+          const sizeMul = 1 + jitter(seed + 2, SIZE_JITTER_FRACTION);
+          out.push({
+            kind: 'foreground',
+            worldX,
+            widthFraction: element.widthFraction * sizeMul,
+            heightFraction: element.heightFraction * sizeMul,
+            shape: element.shape,
+            color: element.color,
+          });
+        }
+        break;
+      }
     }
   }
 

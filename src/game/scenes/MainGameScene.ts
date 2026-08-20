@@ -1,16 +1,17 @@
 import Phaser from 'phaser';
 import { watch, type WatchStopHandle } from 'vue';
-import type { BiomeId, CharacterState } from '@/domain/types';
+import type { BiomeId, CharacterState, DeathCause } from '@/domain/types';
 import { Backdrop } from '@/game/entities/Backdrop';
 import { Cart } from '@/game/entities/Cart';
 import { CharacterSprite } from '@/game/entities/CharacterSprite';
-import { DecorStreamManager } from '@/game/entities/DecorStreamManager';
+import { DecorStreamManager, GROUND_LAYER_FACTOR, screenXAtWorld } from '@/game/entities/DecorStreamManager';
+import { Grave } from '@/game/entities/Grave';
 import { AudioManager } from '@/game/systems/AudioManager';
 import { ConvoySystem } from '@/game/systems/ConvoySystem';
 import { ResourceEventSystem } from '@/game/systems/ResourceEventSystem';
 import { SicknessSystem } from '@/game/systems/SicknessSystem';
 import { applyAudioSettings } from '@/game/utils/audioSettings';
-import { computeCartScreenX, computeGroundY } from '@/game/utils/layout';
+import { computeCartScreenX, computeCartY, computeGraveY, computeGroundY } from '@/game/utils/layout';
 import { eventBus } from '@/state/eventBus';
 import { pinia } from '@/state/pinia';
 import { useAudioStore } from '@/state/stores/audioStore';
@@ -30,6 +31,7 @@ export class MainGameScene extends Phaser.Scene {
   private decor!: DecorStreamManager;
   private cart!: Cart;
   private characterSprites: CharacterSprite[] = [];
+  private graves: Grave[] = [];
   private convoySystem!: ConvoySystem;
   private resourceEventSystem!: ResourceEventSystem;
   private sicknessSystem!: SicknessSystem;
@@ -37,6 +39,8 @@ export class MainGameScene extends Phaser.Scene {
   private currentBiomeId!: BiomeId;
   private anyPanelWasOpen = false;
   private groundY = 0;
+  private cartY = 0;
+  private graveY = 0;
   private cartScreenX = 0;
   private resizeDebounceTimer?: ReturnType<typeof setTimeout>;
   private stopAudioWatch?: WatchStopHandle;
@@ -48,6 +52,8 @@ export class MainGameScene extends Phaser.Scene {
   create(): void {
     this.currentBiomeId = this.convoyStore.convoy.currentBiome().id;
     this.groundY = computeGroundY(this.scale.height);
+    this.cartY = computeCartY(this.groundY, this.scale.height);
+    this.graveY = computeGraveY(this.groundY, this.scale.height);
     this.cartScreenX = computeCartScreenX(this.scale.width);
 
     const biomeSegments = this.convoyStore.convoy.biomeSegments;
@@ -62,9 +68,9 @@ export class MainGameScene extends Phaser.Scene {
       this.scale.width,
       this.scale.height,
     );
-    this.cart = new Cart(this, this.cartScreenX, this.groundY);
+    this.cart = new Cart(this, this.cartScreenX, this.cartY);
     this.characterSprites = this.convoyStore.convoy.characters.map(
-      (character) => new CharacterSprite(this, character, this.groundY),
+      (character) => new CharacterSprite(this, character, this.cartY),
     );
 
     this.convoySystem = new ConvoySystem(this.convoyStore.convoy);
@@ -114,11 +120,12 @@ export class MainGameScene extends Phaser.Scene {
     this.background.update(cartPositionX, biomeSegments);
     this.decor.update(cartPositionX, biomeSegments, this.cartScreenX, this.scale.width);
     this.syncCharacterSprites();
+    this.repositionGraves(cartPositionX);
     this.syncBiome();
     this.sicknessSystem.maybeSicken(this.time.now);
 
     if (newlyDead.length > 0) {
-      this.handleDeath(newlyDead[0]);
+      this.handleDeath(newlyDead[0], 'convoy');
       return;
     }
 
@@ -143,7 +150,17 @@ export class MainGameScene extends Phaser.Scene {
     for (const characterSprite of this.characterSprites) {
       const { state, alive } = characterSprite.character;
       const slot = alive ? slots[state]++ : 0;
-      characterSprite.updatePosition(this.cartScreenX, slot, this.groundY);
+      characterSprite.updatePosition(this.cartScreenX, slot, this.cartY);
+    }
+  }
+
+  /** Reprojects every grave's fixed world-x to the current screen-x — same formula the ground
+   * decor layer uses (GROUND_LAYER_FACTOR), so graves scroll at the same rate as the ground
+   * they're sitting on. */
+  private repositionGraves(cartPositionX: number): void {
+    for (const grave of this.graves) {
+      const screenX = screenXAtWorld(grave.worldX, cartPositionX, this.cartScreenX, GROUND_LAYER_FACTOR);
+      grave.reposition(screenX, this.graveY);
     }
   }
 
@@ -152,8 +169,11 @@ export class MainGameScene extends Phaser.Scene {
   private handleResize = (gameSize: Phaser.Structs.Size): void => {
     const { width, height } = gameSize;
     this.groundY = computeGroundY(height);
+    this.cartY = computeCartY(this.groundY, height);
+    this.graveY = computeGraveY(this.groundY, height);
     this.cartScreenX = computeCartScreenX(width);
-    this.cart.reposition(this.cartScreenX, this.groundY);
+    this.cart.reposition(this.cartScreenX, this.cartY);
+    this.repositionGraves(this.convoyStore.convoy.cartPositionX);
 
     clearTimeout(this.resizeDebounceTimer);
     this.resizeDebounceTimer = setTimeout(() => {
@@ -173,7 +193,9 @@ export class MainGameScene extends Phaser.Scene {
 
     this.anyPanelWasOpen = isOpen;
     for (const characterSprite of this.characterSprites) {
-      characterSprite.setInputEnabled(!isOpen);
+      // A dead character's sprite is hidden (see CharacterSprite.updatePosition) and must never
+      // become clickable again once a panel closes.
+      characterSprite.setInputEnabled(!isOpen && characterSprite.character.alive);
     }
     this.cart.setInputEnabled(!isOpen);
   }
@@ -194,10 +216,22 @@ export class MainGameScene extends Phaser.Scene {
     this.uiStore.selectCart({ x: payload.x, y: payload.y });
   };
 
-  private handleDeath(characterId: string): void {
+  private handleDeath(characterId: string, cause: DeathCause): void {
     this.convoySystem.paused = true;
-    this.uiStore.showTribute(characterId);
+    this.spawnGrave(characterId);
+    this.uiStore.showTribute(characterId, cause);
     eventBus.emit('characterDied', { characterId });
+  }
+
+  /** Left behind at the character's last screen position, translated to a fixed world-x so it
+   * scrolls away with the ground layer afterward instead of staying glued to the cart. */
+  private spawnGrave(characterId: string): void {
+    const characterSprite = this.characterSprites.find((cs) => cs.character.id === characterId);
+    if (!characterSprite) return;
+
+    const cartPositionX = this.convoyStore.convoy.cartPositionX;
+    const worldX = cartPositionX + (characterSprite.sprite.x - this.cartScreenX) / GROUND_LAYER_FACTOR;
+    this.graves.push(new Grave(this, worldX, characterSprite.sprite.x, this.graveY));
   }
 
   private handleResultAcknowledged = (): void => {
@@ -233,7 +267,7 @@ export class MainGameScene extends Phaser.Scene {
 
     if (outcome.died) {
       this.uiStore.clearSignal();
-      this.handleDeath(outcome.characterId);
+      this.handleDeath(outcome.characterId, 'exploration');
       return;
     }
 

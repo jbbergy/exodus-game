@@ -1,5 +1,10 @@
 export type CharacterState = 'pulling' | 'resting' | 'walking';
 
+/** 'exploration' covers dying while away from the convoy gathering resources (see
+ * ResourceEventSystem); 'convoy' covers dying from fatigue/sickness while with the convoy
+ * (see ConvoySystem.tick). Drives which message TributeScreen shows. */
+export type DeathCause = 'convoy' | 'exploration';
+
 export type ResourceType = 'water' | 'food';
 
 export type BiomeId = 'origin' | 'desert-sand' | 'desert-ice' | 'ravaged-plain' | 'abandoned-village';

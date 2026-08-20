@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import type { CollectionOutcome } from '@/domain/Resource';
-import type { ResourceSignal } from '@/domain/types';
+import type { DeathCause, ResourceSignal } from '@/domain/types';
 
 export type ActiveModal = 'none' | 'signal' | 'result' | 'tribute' | 'gameover';
 
@@ -15,6 +15,7 @@ export const useUiStore = defineStore('ui', () => {
   const pendingSignal = ref<ResourceSignal | null>(null);
   const lastOutcome = ref<CollectionOutcome | null>(null);
   const deceasedCharacterId = ref<string | null>(null);
+  const deceasedCause = ref<DeathCause | null>(null);
   // Non-blocking: shown alongside whatever activeModal is, never pauses the game.
   const biomeBannerText = ref<string | null>(null);
   // Opened by tapping/clicking the cart sprite; drives the resources panel.
@@ -46,14 +47,16 @@ export const useUiStore = defineStore('ui', () => {
     activeModal.value = 'none';
   }
 
-  function showTribute(characterId: string): void {
+  function showTribute(characterId: string, cause: DeathCause): void {
     deceasedCharacterId.value = characterId;
+    deceasedCause.value = cause;
     activeModal.value = 'tribute';
   }
 
   function dismissTribute(): void {
     activeModal.value = 'none';
     deceasedCharacterId.value = null;
+    deceasedCause.value = null;
   }
 
   function showGameOver(): void {
@@ -103,6 +106,7 @@ export const useUiStore = defineStore('ui', () => {
     pendingSignal,
     lastOutcome,
     deceasedCharacterId,
+    deceasedCause,
     biomeBannerText,
     cartSelected,
     cartSelectedPosition,

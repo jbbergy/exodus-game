@@ -92,7 +92,19 @@ export const BIOME_BANNER_DURATION_MS = 4000;
 // With Scale.RESIZE the game's logical width/height track the viewport, so layout is expressed
 // as fractions of the current scene size rather than fixed pixel constants (see game/utils/layout.ts).
 export const CART_X_FRACTION = 0.45;
-export const GROUND_Y_FRACTION = 420 / 540;
+// Ground band now covers the bottom half of the viewport (see CART_GROUND_BAND_FRACTION below,
+// which keeps the cart centered in it — together that puts the cart 1/4 of the way up from the
+// bottom of the screen, not at the screen's own vertical middle).
+export const GROUND_Y_FRACTION = 0.5;
+
+// Where within the ground band (0 = right at the horizon line/groundY, 1 = screen bottom) the
+// cart and characters stand — centered rather than pinned to the band's top edge, so they read as
+// standing IN the ground layer instead of hovering just above it.
+export const CART_GROUND_BAND_FRACTION = 0.5;
+
+// Closer to groundY than the cart's own 0.5 — a grave marker sits higher in the band (visually
+// further back) so it reads as behind the cart instead of overlapping its wheels.
+export const GRAVE_GROUND_BAND_FRACTION = 0.22;
 
 // Reference screen-pixel width the hand-authored per-biome decor arrays in BiomePalettes.ts are
 // laid out against (their xFraction/widthFraction values are fractions of this) — independent of

@@ -21,17 +21,22 @@ interface LayerConfig {
   blocksInput: boolean;
 }
 
+// Exported so anything anchoring a fixed world position to the ground (e.g. a grave marker in
+// MainGameScene) scrolls at the same rate as the ground layer itself, without duplicating the
+// magic number.
+export const GROUND_LAYER_FACTOR = 1;
+
 // Ground must sit under characters/cart (depth 4-10ish) and above the background silhouette;
 // foreground sits above them so a tall element (a hut, a rock spire) can visually cover the
 // convoy while it scrolls past, and is the only layer that blocks clicks — a character genuinely
 // hidden behind a foreground shape shouldn't be clickable through it, the way it visually reads.
 const LAYER_CONFIGS: LayerConfig[] = [
   { name: 'background', factor: 0.25, depth: -20, blocksInput: false },
-  { name: 'ground', factor: 1, depth: -9, blocksInput: false },
+  { name: 'ground', factor: GROUND_LAYER_FACTOR, depth: -9, blocksInput: false },
   { name: 'foreground', factor: 1.6, depth: 15, blocksInput: true },
 ];
 
-function screenXAtWorld(worldX: number, cartPositionX: number, cartScreenX: number, factor: number): number {
+export function screenXAtWorld(worldX: number, cartPositionX: number, cartScreenX: number, factor: number): number {
   return cartScreenX + (worldX - cartPositionX) * factor;
 }
 
@@ -65,6 +70,7 @@ export class DecorStreamManager {
   private readonly scene: Phaser.Scene;
   private readonly layers = new Map<DecorLayerName, LayerState>();
   private groundY: number;
+  private width: number;
   private height: number;
 
   constructor(
@@ -78,12 +84,14 @@ export class DecorStreamManager {
   ) {
     this.scene = scene;
     this.groundY = groundY;
+    this.width = width;
     this.height = height;
     for (const config of LAYER_CONFIGS) this.layers.set(config.name, new LayerState());
     this.rebuildAll(segments, cartPositionX, cartScreenX, width);
   }
 
   update(cartPositionX: number, segments: BiomeSegment[], cartScreenX: number, width: number): void {
+    this.width = width;
     for (const config of LAYER_CONFIGS) {
       const state = this.layers.get(config.name)!;
       this.spawnAhead(config, state, segments, cartPositionX, cartScreenX, width);
@@ -94,6 +102,7 @@ export class DecorStreamManager {
 
   resize(width: number, height: number, cartPositionX: number, cartScreenX: number, groundY: number, segments: BiomeSegment[]): void {
     this.groundY = groundY;
+    this.width = width;
     this.height = height;
     this.rebuildAll(segments, cartPositionX, cartScreenX, width);
   }
@@ -160,12 +169,14 @@ export class DecorStreamManager {
   }
 
   // -- Instance factories -----------------------------------------------------------------
-  // Every shape's pixel geometry is computed once, here, using the groundY/height current at
-  // spawn time — only its horizontal screen position is recomputed per frame (reproject), never
+  // Every shape's pixel geometry is computed once, here, using the groundY/width/height current
+  // at spawn time — only its horizontal screen position is recomputed per frame (reproject), never
   // its size, matching the old TileSprite behavior where a texture's pixels never resized
-  // mid-scroll. `widthFraction` is a fraction of BG_TILE_WIDTH (the same fixed 900px reference
-  // the hand-authored BiomePalettes data always used), `heightFraction` a fraction of viewport
-  // height — see BiomePalettes.ts.
+  // mid-scroll. For background/ground, `widthFraction` is a fraction of BG_TILE_WIDTH (the same
+  // fixed 900px reference the hand-authored BiomePalettes data always used); foreground instead
+  // sizes off the live viewport width (see createForegroundInstance) so "at least 25% of the
+  // viewport" for a house stays true at any window size. `heightFraction` is always a fraction of
+  // viewport height — see BiomePalettes.ts.
 
   private createBackgroundInstance(descriptor: BackgroundDescriptor, factor: number, depth: number): DecorInstance {
     if (descriptor.kind === 'tree') {
@@ -233,15 +244,22 @@ export class DecorStreamManager {
     return this.singleAnchorInstance(descriptor.worldX, factor, [ellipse]);
   }
 
-  /** Foreground is the only layer that blocks clicks (see LAYER_CONFIGS), so each shape gets a
-   * hit area matching its own drawn geometry exactly — not just its bounding box — the same way
-   * the old pixel-alpha hack ensured a click between two silhouettes fell through to the convoy
-   * underneath instead of being swallowed by empty space. Rectangle's default `setInteractive()`
-   * hit area already matches its bounds exactly; Triangle/Ellipse need an explicit local geom. */
+  /** Foreground is the layer closest to the "camera", so unlike background/ground (anchored off
+   * groundY) it's anchored to the screen's bottom edge — it should visually loom over the ground
+   * band rather than sit flush with the horizon line. Its width also scales off the live viewport
+   * width rather than the fixed BG_TILE_WIDTH reference the other layers use, so a `widthFraction`
+   * genuinely means "this fraction of the screen" (e.g. a house at 0.3 is always ~30% of the
+   * viewport wide) instead of a fixed pixel size that shrinks as a fraction of wider viewports.
+   * It's also the only layer that blocks clicks (see LAYER_CONFIGS), so each shape gets a hit area
+   * matching its own drawn geometry exactly — not just its bounding box — the same way the old
+   * pixel-alpha hack ensured a click between two silhouettes fell through to the convoy underneath
+   * instead of being swallowed by empty space. Rectangle's default `setInteractive()` hit area
+   * already matches its bounds exactly; Triangle/Ellipse need an explicit local geom. */
   private createForegroundInstance(descriptor: ForegroundElementDescriptor, factor: number, depth: number): DecorInstance {
-    const w = BG_TILE_WIDTH * descriptor.widthFraction;
+    const w = this.width * descriptor.widthFraction;
     const h = this.height * descriptor.heightFraction;
-    const topY = this.groundY - h;
+    const baseY = this.height;
+    const topY = baseY - h;
     const objects: Phaser.GameObjects.GameObject[] = [];
 
     if (descriptor.shape === 'block') {
@@ -250,27 +268,27 @@ export class DecorStreamManager {
       rect.setInteractive();
       objects.push(rect);
     } else if (descriptor.shape === 'spike') {
-      const triangle = this.scene.add.triangle(0, 0, 0, this.groundY, w, this.groundY, w / 2, topY, descriptor.color);
+      const triangle = this.scene.add.triangle(0, 0, 0, baseY, w, baseY, w / 2, topY, descriptor.color);
       triangle.setOrigin(0, 0);
-      triangle.setInteractive(new Phaser.Geom.Triangle(0, this.groundY, w, this.groundY, w / 2, topY), Phaser.Geom.Triangle.Contains);
+      triangle.setInteractive(new Phaser.Geom.Triangle(0, baseY, w, baseY, w / 2, topY), Phaser.Geom.Triangle.Contains);
       objects.push(triangle);
     } else if (descriptor.shape === 'round') {
-      const ellipse = this.scene.add.ellipse(w / 2, this.groundY - h / 2, w, h, descriptor.color);
+      const ellipse = this.scene.add.ellipse(w / 2, baseY - h / 2, w, h, descriptor.color);
       ellipse.setInteractive(new Phaser.Geom.Ellipse(w / 2, h / 2, w, h), Phaser.Geom.Ellipse.Contains);
       objects.push(ellipse);
     } else {
       const wallHeight = h * 0.45;
-      const wall = this.scene.add.rectangle(0, this.groundY - wallHeight, w, wallHeight, descriptor.color);
+      const wall = this.scene.add.rectangle(0, baseY - wallHeight, w, wallHeight, descriptor.color);
       wall.setOrigin(0, 0);
       wall.setInteractive();
       objects.push(wall);
 
       const roofX1 = -w * 0.18;
       const roofX2 = w * 1.18;
-      const roof = this.scene.add.triangle(0, 0, roofX1, this.groundY - wallHeight, roofX2, this.groundY - wallHeight, w / 2, topY, darken(descriptor.color, 0.7));
+      const roof = this.scene.add.triangle(0, 0, roofX1, baseY - wallHeight, roofX2, baseY - wallHeight, w / 2, topY, darken(descriptor.color, 0.7));
       roof.setOrigin(0, 0);
       roof.setInteractive(
-        new Phaser.Geom.Triangle(roofX1, this.groundY - wallHeight, roofX2, this.groundY - wallHeight, w / 2, topY),
+        new Phaser.Geom.Triangle(roofX1, baseY - wallHeight, roofX2, baseY - wallHeight, w / 2, topY),
         Phaser.Geom.Triangle.Contains,
       );
       objects.push(roof);

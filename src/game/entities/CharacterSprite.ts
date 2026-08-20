@@ -81,11 +81,11 @@ export class CharacterSprite {
 
   updatePosition(cartScreenX: number, slotIndex: number, groundY: number): void {
     if (!this.character.alive) {
-      this.sprite.setAlpha(0.25);
+      this.sprite.setVisible(false);
       this.statusLabel.setVisible(false);
       return;
     }
-    this.sprite.setAlpha(1);
+    this.sprite.setVisible(true);
 
     switch (this.character.state) {
       case 'pulling':
